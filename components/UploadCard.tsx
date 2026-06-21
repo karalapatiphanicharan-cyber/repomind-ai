@@ -10,6 +10,7 @@ export default function UploadCard({ onAnalyze }: { onAnalyze: (data: AnalysisSu
   const [githubUrl, setGithubUrl] = useState('');
   const [isDragging, setIsDragging] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [loadingStep, setLoadingStep] = useState<string>('');
   const [error, setError] = useState<string | null>(null);
 
   const zipInputRef = useRef<HTMLInputElement>(null);
@@ -39,6 +40,7 @@ export default function UploadCard({ onAnalyze }: { onAnalyze: (data: AnalysisSu
 
   const uploadZip = async (file: File) => {
     setIsLoading(true);
+    setLoadingStep('Uploading and processing project...');
     setError(null);
     const formData = new FormData();
     formData.append('file', file);
@@ -68,6 +70,7 @@ export default function UploadCard({ onAnalyze }: { onAnalyze: (data: AnalysisSu
   const analyzeGithub = async () => {
     if (!githubUrl) return;
     setIsLoading(true);
+    setLoadingStep('Cloning repository...');
     setError(null);
 
     try {
@@ -142,7 +145,12 @@ export default function UploadCard({ onAnalyze }: { onAnalyze: (data: AnalysisSu
                 {isLoading && (
                   <div className="flex flex-col items-center">
                     <div className="w-8 h-8 border-2 border-accent border-t-transparent rounded-full animate-spin mb-4" />
-                    <p className="text-sm font-bold text-accent">Processing Project...</p>
+                    <p className="text-sm font-bold text-accent">{loadingStep}</p>
+                    <div className="mt-4 flex flex-col gap-1 items-center">
+                      <p className="text-[10px] text-secondary-text animate-pulse">✓ Running Code Analysis Agent</p>
+                      <p className="text-[10px] text-secondary-text animate-pulse delay-75">✓ Security Review in Progress</p>
+                      <p className="text-[10px] text-secondary-text animate-pulse delay-150">⏳ Building Engineering Report</p>
+                    </div>
                   </div>
                 )}
               </div>
@@ -208,7 +216,10 @@ export default function UploadCard({ onAnalyze }: { onAnalyze: (data: AnalysisSu
               className="w-full h-14 rounded-xl bg-accent text-white font-bold hover:bg-blue-600 hover:scale-[1.01] transition-all duration-300 shadow-lg shadow-accent/20 flex items-center justify-center active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-4 focus-visible:ring-offset-background cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isLoading ? (
-                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                <div className="flex items-center space-x-3">
+                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  <span className="text-sm">Agent Analysis in Progress...</span>
+                </div>
               ) : (
                 'Analyze Repository'
               )}

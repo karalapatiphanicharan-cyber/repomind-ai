@@ -3,3 +3,5 @@ uvicorn
 python-multipart
 pydantic
 GitPython
+google-generativeai
+pydantic-settings

@@ -5,10 +5,12 @@ from fastapi import APIRouter, UploadFile, File, HTTPException
 from ..config import settings
 from ..services.zip_processor import ZipProcessor
 from ..services.file_scanner import FileScanner
+from ..agents.orchestrator import Orchestrator
 from ..utils.cleanup import cleanup_directory
 from ..models.requests import ProjectSummary
 
 router = APIRouter()
+orchestrator = Orchestrator()
 
 @router.post("/upload", response_model=ProjectSummary)
 async def upload_zip(file: UploadFile = File(...)):
@@ -40,13 +42,17 @@ async def upload_zip(file: UploadFile = File(...)):
         # Extract project name from filename
         project_name = Path(file.filename).stem
 
-        # Scan files
+        # 1. Scan files (Phase 2)
         scanner = FileScanner(final_project_dir)
         scan_results = scanner.scan(project_name=project_name)
 
+        # 2. Run AI Analysis (Phase 3)
+        ai_report = await orchestrator.analyze_project(scan_results, final_project_dir)
+
         return {
             "success": True,
-            **scan_results
+            **scan_results,
+            "ai_report": ai_report
         }
 
     except HTTPException:

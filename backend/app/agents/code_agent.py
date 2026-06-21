@@ -1,0 +1,33 @@
+import json
+import logging
+from typing import Dict, Any
+from ..services.gemini_client import gemini_client
+from ..prompts.agent_prompts import CODE_ANALYSIS_PROMPT
+
+logger = logging.getLogger(__name__)
+
+class CodeAgent:
+    async def analyze(self, repo_content: str) -> Dict[str, Any]:
+        prompt = CODE_ANALYSIS_PROMPT.format(repo_content=repo_content)
+
+        try:
+            response_text = await gemini_client.generate_content(
+                prompt,
+                generation_config={"response_mime_type": "application/json"}
+            )
+            # Remove potential markdown formatting if Gemini includes it despite config
+            if response_text.startswith("```json"):
+                response_text = response_text.replace("```json", "").replace("```", "").strip()
+
+            return json.loads(response_text)
+        except Exception as e:
+            logger.error(f"CodeAgent error: {str(e)}")
+            return {
+                "score": 0,
+                "maintainability_score": 0,
+                "overview": "Failed to analyze code quality.",
+                "architecture": "N/A",
+                "strengths": [],
+                "weaknesses": [],
+                "recommendations": []
+            }

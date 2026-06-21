@@ -1,5 +1,5 @@
-from pydantic import BaseModel, HttpUrl
-from typing import List, Dict, Optional
+from pydantic import BaseModel
+from typing import List, Dict, Any, Optional
 
 class GitHubRequest(BaseModel):
     url: str
@@ -13,3 +13,4 @@ class ProjectSummary(BaseModel):
     detected_files: Dict[str, bool]
     top_level_directories: List[str]
     error: Optional[str] = None
+    ai_report: Optional[Dict[str, Any]] = None
