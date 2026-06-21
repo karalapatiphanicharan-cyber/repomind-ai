@@ -1,13 +1,20 @@
+'use client';
+
 import { Code2, ShieldAlert, FileText, Lightbulb } from 'lucide-react';
+import { useState } from 'react';
+import { AnalysisSummary } from '@/types/analysis';
 import Navbar from '@/components/Navbar';
 import Hero from '@/components/Hero';
 import UploadCard from '@/components/UploadCard';
+import SummaryCard from '@/components/SummaryCard';
 import HowItWorks from '@/components/HowItWorks';
 import Agents from '@/components/Agents';
 import FeatureCard from '@/components/FeatureCard';
 import Footer from '@/components/Footer';
 
 export default function Home() {
+  const [analysisResult, setAnalysisResult] = useState<AnalysisSummary | null>(null);
+
   const features = [
     {
       title: "Code Analysis",
@@ -43,7 +50,16 @@ export default function Home() {
         <Hero />
 
         <section id="analyze" className="pb-24 sm:pb-32">
-          <UploadCard />
+          {!analysisResult ? (
+            <UploadCard onAnalyze={setAnalysisResult} />
+          ) : (
+            <div className="max-w-4xl mx-auto px-4">
+              <SummaryCard
+                summary={analysisResult}
+                onReset={() => setAnalysisResult(null)}
+              />
+            </div>
+          )}
         </section>
 
         <HowItWorks />
