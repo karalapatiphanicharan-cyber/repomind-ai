@@ -27,7 +27,13 @@ class SecurityAgent:
         except Exception as e:
             logger.error(f"SecurityAgent error: {str(e)}")
             return {
-                "score": 100,
-                "risk_summary": "Failed to perform security review.",
-                "findings": []
+                "score": 0,
+                "risk_summary": f"Security review failed: {str(e)}",
+                "findings": [
+                    {
+                        "issue": "Security Agent Error",
+                        "severity": "Medium",
+                        "fix": "Check Gemini API configuration and retry."
+                    }
+                ]
             }

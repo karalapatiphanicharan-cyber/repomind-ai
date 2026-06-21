@@ -22,19 +22,19 @@ class GeminiClient:
             return
 
         api_key = settings.get_api_key()
-        if not api_key:
-            logger.warning("No Gemini API key detected (GEMINI_API_KEY or GOOGLE_API_KEY). AI analysis will fail.")
-            self._initialized = False
-            return
-
-        try:
-            # Initialize the new google-genai client
-            self.client = genai.Client(api_key=api_key)
-            self.model_name = settings.GEMINI_MODEL
-            self._initialized = True
-            logger.info(f"GeminiClient initialized successfully with model: {self.model_name}")
-        except Exception as e:
-            logger.error(f"Failed to initialize GeminiClient: {str(e)}")
+        if api_key:
+            logger.info("Gemini API key detected successfully.")
+            try:
+                # Initialize the new google-genai client
+                self.client = genai.Client(api_key=api_key)
+                self.model_name = settings.GEMINI_MODEL
+                self._initialized = True
+                logger.info(f"GeminiClient initialized successfully with model: {self.model_name}")
+            except Exception as e:
+                logger.error(f"Failed to initialize GeminiClient: {str(e)}")
+                self._initialized = False
+        else:
+            logger.error("Gemini API key missing.")
             self._initialized = False
 
     async def generate_content(
@@ -56,9 +56,6 @@ class GeminiClient:
         last_error = None
         for attempt in range(retries):
             try:
-                # The new SDK uses client.models.generate_content
-                # Use asyncio.to_thread for the synchronous call in the new SDK
-                # (unless using the async client, but Client is sync by default)
                 response = await asyncio.to_thread(
                     self.client.models.generate_content,
                     model=self.model_name,
@@ -78,8 +75,8 @@ class GeminiClient:
                 # Immediate failures (no retry)
                 if "invalid api key" in error_str or "unauthenticated" in error_str:
                     raise HTTPException(status_code=401, detail="Invalid Gemini API Key.")
-                if "not found" in error_str or "model" in error_str and "not found" in error_str:
-                     raise HTTPException(status_code=400, detail=f"Invalid Gemini model: {self.model_name}")
+                if "not found" in error_str or ("model" in error_str and "not found" in error_str):
+                     raise HTTPException(status_code=400, detail=f"Invalid Gemini model: {self.model_name}. Please ensure you have access to this model.")
 
                 # Retryable failures
                 if "limit" in error_str or "429" in error_str or "500" in error_str or "503" in error_str:

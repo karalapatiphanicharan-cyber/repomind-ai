@@ -31,9 +31,9 @@ class CodeAgent:
             return {
                 "score": 0,
                 "maintainability_score": 0,
-                "overview": "Failed to analyze code quality.",
-                "architecture": "N/A",
+                "overview": f"Analysis failed: {str(e)}",
+                "architecture": "Information unavailable due to analysis failure.",
                 "strengths": [],
                 "weaknesses": [],
-                "recommendations": []
+                "recommendations": ["Ensure your Gemini API key is valid and has access to the requested model."]
             }

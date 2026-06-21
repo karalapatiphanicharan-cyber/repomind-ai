@@ -37,9 +37,9 @@ class PlannerAgent:
         except Exception as e:
             logger.error(f"PlannerAgent error: {str(e)}")
             return {
-                "critical": [],
+                "critical": [f"Repair AI Analysis Pipeline: {str(e)}"],
                 "high": [],
                 "medium": [],
                 "low": [],
-                "overall_recommendation": "Failed to generate action plan."
+                "overall_recommendation": "The action plan could not be generated because the AI agent encountered an error."
             }
