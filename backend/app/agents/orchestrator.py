@@ -28,23 +28,43 @@ class Orchestrator:
 
         try:
             # 1. Summarize repository using chunking if necessary
+            # This is a shared context for all agents
             context = await self.chunker.summarize_repo(root_dir)
 
             # 2. Run analysis agents in parallel
-            logger.info("Invoking analysis agents...")
-            code_task = self.code_agent.analyze(context)
-            security_task = self.security_agent.analyze(context)
-            docs_task = self.documentation_agent.analyze(context)
+            # We run these three core agents concurrently as they use the same context
+            logger.info("Invoking core analysis agents...")
 
-            code_results, security_results, docs_results = await asyncio.gather(
-                code_task, security_task, docs_task
-            )
+            try:
+                code_task = self.code_agent.analyze(context)
+                security_task = self.security_agent.analyze(context)
+                docs_task = self.documentation_agent.analyze(context)
+
+                code_results, security_results, docs_results = await asyncio.gather(
+                    code_task, security_task, docs_task
+                )
+            except HTTPException as e:
+                if e.status_code == 429:
+                    logger.error("Quota exhausted during core agent execution. Stopping pipeline.")
+                    raise
+                raise
 
             # 3. Generate prioritized action plan
+            # This depends on results from previous agents
             logger.info("Invoking planner agent...")
-            plan_results = await self.planner_agent.generate_plan(
-                code_results, security_results, docs_results
-            )
+            try:
+                plan_results = await self.planner_agent.generate_plan(
+                    code_results, security_results, docs_results
+                )
+            except HTTPException as e:
+                if e.status_code == 429:
+                     logger.warning("Quota exhausted during planning. Returning partial results.")
+                     plan_results = {
+                        "critical": [], "high": [], "medium": [], "low": [],
+                        "overall_recommendation": "Action plan incomplete due to AI quota limits."
+                     }
+                else:
+                    raise
 
             # 4. Aggregate results into final report
             logger.info("Building final report...")
