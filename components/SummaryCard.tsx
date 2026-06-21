@@ -21,9 +21,10 @@ import { AnalysisSummary } from '@/types/analysis';
 interface SummaryCardProps {
   summary: AnalysisSummary;
   onReset: () => void;
+  onRetry?: () => void;
 }
 
-export default function SummaryCard({ summary, onReset }: SummaryCardProps) {
+export default function SummaryCard({ summary, onReset, onRetry }: SummaryCardProps) {
   const aiReport = summary.ai_report;
   const aiError = summary.ai_error;
 
@@ -65,12 +66,14 @@ export default function SummaryCard({ summary, onReset }: SummaryCardProps) {
             </div>
           </div>
           <div className="flex gap-3 w-full sm:w-auto">
-            <button
-              onClick={onReset}
-              className="flex-grow sm:flex-grow-0 px-8 py-3 rounded-xl bg-accent text-white text-sm font-bold hover:bg-blue-600 transition-all active:scale-95 flex items-center justify-center shadow-lg shadow-accent/20"
-            >
-              <RefreshCw className="w-4 h-4 mr-2" /> Retry Analysis
-            </button>
+            {onRetry && (
+               <button
+                onClick={onRetry}
+                className="flex-grow sm:flex-grow-0 px-8 py-3 rounded-xl bg-accent text-white text-sm font-bold hover:bg-blue-600 transition-all active:scale-95 flex items-center justify-center shadow-lg shadow-accent/20"
+              >
+                <RefreshCw className="w-4 h-4 mr-2" /> Retry Analysis
+              </button>
+            )}
             <button
               onClick={onReset}
               className="flex-grow sm:flex-grow-0 px-8 py-3 rounded-xl bg-surface border border-border text-sm font-bold hover:border-accent transition-all active:scale-95"
