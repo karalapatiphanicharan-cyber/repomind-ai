@@ -3,6 +3,7 @@
 import { Code2, ShieldAlert, FileText, Lightbulb } from 'lucide-react';
 import { useState } from 'react';
 import { AnalysisSummary } from '@/types/analysis';
+import { AnimatePresence, motion } from 'framer-motion';
 import Navbar from '@/components/Navbar';
 import Hero from '@/components/Hero';
 import UploadCard from '@/components/UploadCard';
@@ -50,16 +51,34 @@ export default function Home() {
         <Hero />
 
         <section id="analyze" className="pb-24 sm:pb-32">
-          {!analysisResult ? (
-            <UploadCard onAnalyze={setAnalysisResult} />
-          ) : (
-            <div className="max-w-4xl mx-auto px-4">
-              <SummaryCard
-                summary={analysisResult}
-                onReset={() => setAnalysisResult(null)}
-              />
-            </div>
-          )}
+          <div className="max-w-4xl mx-auto px-4">
+            <AnimatePresence mode="wait">
+              {!analysisResult ? (
+                <motion.div
+                  key="upload"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.95 }}
+                  transition={{ duration: 0.4 }}
+                >
+                  <UploadCard onAnalyze={setAnalysisResult} />
+                </motion.div>
+              ) : (
+                <motion.div
+                  key="summary"
+                  initial={{ opacity: 0, scale: 1.05 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.95 }}
+                  transition={{ duration: 0.6, type: 'spring', bounce: 0.3 }}
+                >
+                  <SummaryCard
+                    summary={analysisResult}
+                    onReset={() => setAnalysisResult(null)}
+                  />
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
         </section>
 
         <HowItWorks />

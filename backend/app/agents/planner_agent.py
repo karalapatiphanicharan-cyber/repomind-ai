@@ -3,6 +3,7 @@ import logging
 from typing import Dict, Any
 from ..services.gemini_client import gemini_client
 from ..prompts.agent_prompts import PLANNER_PROMPT
+from fastapi import HTTPException
 
 logger = logging.getLogger(__name__)
 
