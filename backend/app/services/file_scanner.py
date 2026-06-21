@@ -8,30 +8,31 @@ IGNORE_DIRS = {
 }
 
 # Supported file extensions and their corresponding languages
+# Organized as (Language Name, Is Primary Programming Language)
 EXTENSION_MAP = {
-    '.py': 'Python',
-    '.js': 'JavaScript',
-    '.jsx': 'JavaScript React',
-    '.ts': 'TypeScript',
-    '.tsx': 'TypeScript React',
-    '.java': 'Java',
-    '.cpp': 'C++',
-    '.c': 'C',
-    '.cs': 'C#',
-    '.go': 'Go',
-    '.rs': 'Rust',
-    '.php': 'PHP',
-    '.rb': 'Ruby',
-    '.json': 'JSON',
-    '.yaml': 'YAML',
-    '.yml': 'YAML',
-    '.toml': 'TOML',
-    '.xml': 'XML',
-    '.html': 'HTML',
-    '.css': 'CSS',
-    '.scss': 'SCSS',
-    '.md': 'Markdown',
-    '.txt': 'Text'
+    '.py': ('Python', True),
+    '.js': ('JavaScript', True),
+    '.jsx': ('JavaScript React', True),
+    '.ts': ('TypeScript', True),
+    '.tsx': ('TypeScript React', True),
+    '.java': ('Java', True),
+    '.cpp': ('C++', True),
+    '.c': ('C', True),
+    '.cs': ('C#', True),
+    '.go': ('Go', True),
+    '.rs': ('Rust', True),
+    '.php': ('PHP', True),
+    '.rb': ('Ruby', True),
+    '.json': ('JSON', False),
+    '.yaml': ('YAML', False),
+    '.yml': ('YAML', False),
+    '.toml': ('TOML', False),
+    '.xml': ('XML', False),
+    '.html': ('HTML', False),
+    '.css': ('CSS', False),
+    '.scss': ('SCSS', False),
+    '.md': ('Markdown', False),
+    '.txt': ('Text', False)
 }
 
 # Special files to detect
@@ -44,11 +45,13 @@ SPECIAL_FILES = {
 }
 
 class FileScanner:
-    def __init__(self, root_dir: str):
+    def __init__(self, root_dir: str, project_name: str = None):
         self.root_dir = root_dir
+        self._project_name = project_name
         self.files_scanned = 0
         self.supported_files_count = 0
-        self.languages: Set[str] = set()
+        self.primary_languages: Set[str] = set()
+        self.supporting_languages: Set[str] = set()
         self.detected_special_files: Dict[str, bool] = {
             'readme': False,
             'package_json': False,
@@ -58,9 +61,12 @@ class FileScanner:
         }
         self.top_level_directories: List[str] = []
 
-    def scan(self) -> Dict:
+    def scan(self, project_name: str = None) -> Dict:
         if not os.path.exists(self.root_dir):
             return {"error": "Root directory does not exist"}
+
+        # Priority: explicit param > constructor param > directory basename
+        p_name = project_name or self._project_name or os.path.basename(self.root_dir)
 
         # Get top level directories
         self.top_level_directories = [
@@ -84,15 +90,23 @@ class FileScanner:
 
                 # Check file extension
                 _, ext = os.path.splitext(file)
-                if ext.lower() in EXTENSION_MAP:
+                ext_lower = ext.lower()
+                if ext_lower in EXTENSION_MAP:
                     self.supported_files_count += 1
-                    self.languages.add(EXTENSION_MAP[ext.lower()])
+                    lang_name, is_primary = EXTENSION_MAP[ext_lower]
+                    if is_primary:
+                        self.primary_languages.add(lang_name)
+                    else:
+                        self.supporting_languages.add(lang_name)
+
+        # Logical presentation: Primary languages first, then supporting, each group sorted alphabetically
+        ordered_languages = sorted(list(self.primary_languages)) + sorted(list(self.supporting_languages))
 
         return {
-            "project_name": os.path.basename(self.root_dir),
+            "project_name": p_name,
             "files_scanned": self.files_scanned,
             "total_supported_files": self.supported_files_count,
-            "languages": sorted(list(self.languages)),
+            "languages": ordered_languages,
             "detected_files": self.detected_special_files,
             "top_level_directories": self.top_level_directories
         }
