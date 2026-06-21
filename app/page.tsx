@@ -16,6 +16,7 @@ import Footer from '@/components/Footer';
 export default function Home() {
   const [analysisResult, setAnalysisResult] = useState<AnalysisSummary | null>(null);
   const [analysisDuration, setAnalysisDuration] = useState<number | null>(null);
+  const [retryTrigger, setRetryTrigger] = useState(0);
   const startTimeRef = useRef<number | null>(null);
 
   const handleAnalyzeComplete = (data: AnalysisSummary) => {
@@ -23,6 +24,23 @@ export default function Home() {
       setAnalysisDuration((Date.now() - startTimeRef.current) / 1000);
     }
     setAnalysisResult(data);
+  };
+
+  const handleStartAnalysis = () => {
+    startTimeRef.current = Date.now();
+  };
+
+  const handleReset = () => {
+    setAnalysisResult(null);
+    setAnalysisDuration(null);
+    startTimeRef.current = null;
+    setRetryTrigger(0);
+  };
+
+  const handleRetry = () => {
+    // We clear the result but keep the trigger to tell UploadCard to try again with its existing state
+    setAnalysisResult(null);
+    setRetryTrigger(prev => prev + 1);
   };
 
   const features = [
@@ -64,7 +82,7 @@ export default function Home() {
             <AnimatePresence mode="wait">
               {!analysisResult ? (
                 <motion.div
-                  key="upload"
+                  key={`upload-${retryTrigger}`}
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, scale: 0.95 }}
@@ -72,7 +90,8 @@ export default function Home() {
                 >
                   <UploadCard
                     onAnalyze={handleAnalyzeComplete}
-                    onStart={() => { startTimeRef.current = Date.now(); }}
+                    onStart={handleStartAnalysis}
+                    autoRetry={retryTrigger > 0}
                   />
                 </motion.div>
               ) : (
@@ -86,14 +105,8 @@ export default function Home() {
                   <SummaryCard
                     summary={analysisResult}
                     duration={analysisDuration}
-                    onReset={() => {
-                      setAnalysisResult(null);
-                      startTimeRef.current = null;
-                    }}
-                    onRetry={() => {
-                      setAnalysisResult(null);
-                      // In a real retry we'd re-trigger the logic
-                    }}
+                    onReset={handleReset}
+                    onRetry={handleRetry}
                   />
                 </motion.div>
               )}

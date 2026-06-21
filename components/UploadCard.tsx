@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import {
   Upload,
   Link as LinkIcon,
@@ -51,11 +51,14 @@ const ZIP_STAGES: LoadingStage[] = [
 
 export default function UploadCard({
   onAnalyze,
-  onStart
+  onStart,
+  autoRetry = false
 }: {
   onAnalyze: (data: AnalysisSummary) => void,
-  onStart?: () => void
+  onStart?: () => void,
+  autoRetry?: boolean
 }) {
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [fileName, setFileName] = useState<string | null>(null);
   const [githubUrl, setGithubUrl] = useState('');
   const [isDragging, setIsDragging] = useState(false);
@@ -72,64 +75,24 @@ export default function UploadCard({
 
   const stages = sourceType === 'github' ? GITHUB_STAGES : ZIP_STAGES;
 
-  // Simulate progress for UI feel
-  useEffect(() => {
-    let interval: NodeJS.Timeout;
-    if (isLoading && currentStage < stages.length - 1) {
-      interval = setInterval(() => {
-        setCurrentStage(prev => Math.min(prev + 1, stages.length - 1));
-      }, 3000);
-    }
-    return () => clearInterval(interval);
-  }, [isLoading, currentStage, stages.length]);
-
-  useEffect(() => {
-    const handleFocus = (e: Event) => {
-      const detail = (e as CustomEvent).detail;
-      if (detail.type === 'zip') {
-        zipInputRef.current?.focus();
-      } else if (detail.type === 'github') {
-        githubInputRef.current?.focus();
-      }
-    };
-
-    window.addEventListener('repomind-focus', handleFocus);
-    return () => window.removeEventListener('repomind-focus', handleFocus);
-  }, []);
-
-  const resetState = () => {
+  const resetState = useCallback(() => {
     setIsLoading(false);
-    setSourceType(null);
     setCurrentStage(0);
     setError(null);
     setIsTimeout(false);
     if (timeoutRef.current) clearTimeout(timeoutRef.current);
     abortControllerRef.current = null;
-  };
+  }, []);
 
-  const cancelAnalysis = () => {
-    if (abortControllerRef.current) {
-      abortControllerRef.current.abort();
-    }
-    resetState();
-  };
-
-  const startTimeout = () => {
+  const startTimeout = useCallback(() => {
     if (timeoutRef.current) clearTimeout(timeoutRef.current);
     timeoutRef.current = setTimeout(() => {
       setIsTimeout(true);
     }, 60000); // 60 seconds timeout warning
-  };
+  }, []);
 
-  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setFileName(file.name);
-      await uploadZip(file);
-    }
-  };
-
-  const uploadZip = async (file: File) => {
+  const uploadZip = useCallback(async (file: File) => {
+    if (isLoading) return;
     onStart?.();
     setIsLoading(true);
     setSourceType('zip');
@@ -160,16 +123,15 @@ export default function UploadCard({
       } else {
         setError('An unexpected error occurred during ZIP upload');
       }
-      setFileName(null);
     } finally {
       if (!abortControllerRef.current?.signal.aborted) {
         resetState();
       }
     }
-  };
+  }, [isLoading, onAnalyze, onStart, resetState, startTimeout]);
 
-  const analyzeGithub = async () => {
-    if (!githubUrl) return;
+  const analyzeGithub = useCallback(async () => {
+    if (!githubUrl || isLoading) return;
     onStart?.();
     setIsLoading(true);
     setSourceType('github');
@@ -204,6 +166,61 @@ export default function UploadCard({
         resetState();
       }
     }
+  }, [githubUrl, isLoading, onAnalyze, onStart, resetState, startTimeout]);
+
+  // Handle autoRetry when prop changes
+  useEffect(() => {
+    if (autoRetry && !isLoading) {
+      if (sourceType === 'github' && githubUrl) {
+        analyzeGithub();
+      } else if (sourceType === 'zip' && selectedFile) {
+        uploadZip(selectedFile);
+      }
+    }
+  }, [autoRetry, isLoading, sourceType, githubUrl, selectedFile, analyzeGithub, uploadZip]);
+
+  // Simulate progress for UI feel
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (isLoading && currentStage < stages.length - 1) {
+      interval = setInterval(() => {
+        setCurrentStage(prev => Math.min(prev + 1, stages.length - 1));
+      }, 3000);
+    }
+    return () => clearInterval(interval);
+  }, [isLoading, currentStage, stages.length]);
+
+  useEffect(() => {
+    const handleFocus = (e: Event) => {
+      const detail = (e as CustomEvent).detail;
+      if (detail.type === 'zip') {
+        zipInputRef.current?.focus();
+      } else if (detail.type === 'github') {
+        githubInputRef.current?.focus();
+      }
+    };
+
+    window.addEventListener('repomind-focus', handleFocus);
+    return () => window.removeEventListener('repomind-focus', handleFocus);
+  }, []);
+
+  const cancelAnalysis = () => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    setSourceType(null);
+    setFileName(null);
+    setSelectedFile(null);
+    resetState();
+  };
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file && !isLoading) {
+      setFileName(file.name);
+      setSelectedFile(file);
+      await uploadZip(file);
+    }
   };
 
   const progressPercentage = stages[currentStage].percentage;
@@ -225,14 +242,16 @@ export default function UploadCard({
               <div className="relative">
                 <label
                   htmlFor="zip-upload"
-                  onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
+                  onDragOver={(e) => { e.preventDefault(); if (!isLoading) setIsDragging(true); }}
                   onDragLeave={() => setIsDragging(false)}
                   onDrop={(e) => {
                     e.preventDefault();
                     setIsDragging(false);
+                    if (isLoading) return;
                     const file = e.dataTransfer.files?.[0];
                     if (file && (file.type === 'application/zip' || file.name.endsWith('.zip'))) {
                       setFileName(file.name);
+                      setSelectedFile(file);
                       uploadZip(file);
                     }
                   }}
@@ -240,7 +259,7 @@ export default function UploadCard({
                     isDragging
                       ? 'border-accent bg-accent/10 scale-[1.01]'
                       : 'border-border/60 hover:border-accent/50 hover:bg-accent/5'
-                  }`}
+                  } ${isLoading ? 'opacity-50 cursor-not-allowed pointer-events-none' : ''}`}
                 >
                   <div className="flex flex-col items-center justify-center pt-5 pb-6 px-6 text-center">
                     <div className="w-16 h-16 rounded-full bg-accent/10 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300">
@@ -256,6 +275,18 @@ export default function UploadCard({
                       <div className="px-6 py-2.5 bg-surface border border-border rounded-xl text-sm font-semibold group-hover:border-accent group-hover:text-accent group-focus-within:border-accent group-focus-within:text-accent transition-all duration-300 group-active:scale-95">
                         Choose ZIP File
                       </div>
+                    )}
+                    {fileName && (
+                       <button
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          if (selectedFile) uploadZip(selectedFile);
+                        }}
+                        className="px-6 py-2.5 bg-accent text-white rounded-xl text-sm font-bold shadow-lg shadow-accent/20 hover:scale-105 active:scale-95 transition-all"
+                       >
+                         Try Again
+                       </button>
                     )}
                   </div>
                   <input
@@ -302,7 +333,7 @@ export default function UploadCard({
                   <input
                     ref={githubInputRef}
                     type="text"
-                    className="block w-full h-14 pl-12 pr-4 bg-background/50 border border-border/60 rounded-xl text-primary-text text-sm placeholder:text-secondary-text/60 focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent transition-all duration-300"
+                    className="block w-full h-14 pl-12 pr-4 bg-background/50 border border-border/60 rounded-xl text-primary-text text-sm placeholder:text-secondary-text/60 focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
                     placeholder="https://github.com/username/repository"
                     value={githubUrl}
                     onChange={(e) => setGithubUrl(e.target.value)}
@@ -315,7 +346,7 @@ export default function UploadCard({
                   disabled={!githubUrl || isLoading}
                   className="w-full h-14 rounded-xl bg-accent text-white font-bold hover:bg-blue-600 hover:scale-[1.01] transition-all duration-300 shadow-lg shadow-accent/20 flex items-center justify-center active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-4 focus-visible:ring-offset-background cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  Analyze Repository
+                  {sourceType === 'github' && error ? 'Retry Analysis' : 'Analyze Repository'}
                 </button>
               </div>
             </>
@@ -402,8 +433,8 @@ export default function UploadCard({
                         </div>
                         <p className="text-xs text-secondary-text">The AI service is taking longer than expected. The provider may be under heavy load.</p>
                         <div className="flex gap-2 w-full">
-                           <button onClick={() => setIsTimeout(false)} className="flex-1 py-2 bg-yellow-500/10 border border-yellow-500/20 rounded-lg text-[10px] font-bold text-yellow-500 hover:bg-yellow-500/20 transition-all uppercase tracking-tighter">Continue Waiting</button>
-                           <button onClick={cancelAnalysis} className="flex-1 py-2 bg-surface border border-border rounded-lg text-[10px] font-bold text-secondary-text hover:text-accent transition-all uppercase tracking-tighter">Analyze Another</button>
+                           <button onClick={() => setIsTimeout(false)} className="flex-1 py-2 bg-yellow-500/10 border border-yellow-500/20 rounded-lg text-[10px] font-bold text-yellow-500 hover:bg-yellow-500/20 transition-all uppercase tracking-tighter cursor-pointer">Continue Waiting</button>
+                           <button onClick={cancelAnalysis} className="flex-1 py-2 bg-surface border border-border rounded-lg text-[10px] font-bold text-secondary-text hover:text-accent transition-all uppercase tracking-tighter cursor-pointer">Analyze Another</button>
                         </div>
                       </motion.div>
                     )}
@@ -412,7 +443,7 @@ export default function UploadCard({
                   {/* Cancel Button */}
                   <button
                     onClick={cancelAnalysis}
-                    className="w-full flex items-center justify-center space-x-2 text-secondary-text/40 hover:text-red-500 transition-colors text-xs font-bold uppercase tracking-widest py-2"
+                    className="w-full flex items-center justify-center space-x-2 text-secondary-text/40 hover:text-red-500 transition-colors text-xs font-bold uppercase tracking-widest py-2 cursor-pointer"
                   >
                     <XCircle className="w-4 h-4" />
                     <span>Cancel Analysis</span>
