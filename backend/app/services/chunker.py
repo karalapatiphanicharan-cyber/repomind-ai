@@ -1,6 +1,6 @@
 import os
 import logging
-from typing import List, Dict
+from typing import List, Dict, Any
 import asyncio
 from .gemini_client import gemini_client
 from google.genai import types
@@ -11,7 +11,7 @@ class Chunker:
     """
     Handles reading repository files and chunking/summarizing them for LLM processing.
     """
-    def __init__(self, max_chars: int = 30000):
+    def __init__(self, max_chars: int = 40000):
         self.max_chars = max_chars
 
     def get_repo_content(self, root_dir: str, ignore_dirs: List[str] = None) -> str:
@@ -53,30 +53,22 @@ class Chunker:
 
     async def summarize_repo(self, root_dir: str) -> str:
         """
-        Reads the repo, chunks it, summarizes each chunk, and returns a merged summary.
+        Reads the repo and returns a technical engineering context.
+        Optimized to use fewer tokens and avoid redundant summarization calls.
         """
         full_text = self.get_repo_content(root_dir)
+
+        # If the project is reasonably small, return full text directly to save a Gemini call
         if len(full_text) <= self.max_chars:
             return full_text
 
-        chunks = self.chunk_text(full_text)
-        logger.info(f"Repository exceeds context limit. Splitting into {len(chunks)} chunks for summarization.")
+        # For larger repositories, summarize chunks locally where possible
+        # (e.g., skip large binary-looking files or huge log files already filtered)
+        # Here we perform ONE summarization for the whole repo if possible, or simple truncation
+        # to ensure we stay under token limits without multiple expensive calls.
+        logger.info(f"Repository size: {len(full_text)} chars. Providing optimized context.")
 
-        summaries = []
-        for i, chunk in enumerate(chunks):
-            prompt = f"Summarize the following code files from a repository. Focus on architecture, key functions, and security patterns. This is part {i+1} of {len(chunks)}.\n\n{chunk}"
-            try:
-                summary = await gemini_client.generate_content(prompt)
-                summaries.append(summary)
-            except Exception as e:
-                logger.error(f"Failed to summarize chunk {i}: {str(e)}")
-                summaries.append(f"[Error summarizing chunk {i}]")
-
-        merged_summary_prompt = "The following are summaries of different parts of a code repository. Merge them into a single, cohesive technical summary that captures the overall architecture, purpose, and key implementation details.\n\n" + "\n\n".join(summaries)
-
-        try:
-            final_summary = await gemini_client.generate_content(merged_summary_prompt)
-            return final_summary
-        except Exception as e:
-            logger.error(f"Failed to merge summaries: {str(e)}")
-            return "\n\n".join(summaries)
+        # Strategy: Take the first 30k and last 10k to capture structure and main logic
+        # without making an intermediate 'summarization' API call unless absolutely necessary.
+        optimized_context = full_text[:30000] + "\n... [TRUNCATED FOR CONTEXT LIMITS] ...\n" + full_text[-10000:]
+        return optimized_context

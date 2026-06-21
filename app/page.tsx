@@ -74,6 +74,10 @@ export default function Home() {
                   <SummaryCard
                     summary={analysisResult}
                     onReset={() => setAnalysisResult(null)}
+                    onRetry={() => {
+                       // Future: re-run AI part only
+                       setAnalysisResult(null);
+                    }}
                   />
                 </motion.div>
               )}

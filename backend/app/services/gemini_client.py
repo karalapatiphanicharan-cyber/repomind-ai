@@ -23,7 +23,6 @@ class GeminiClient:
 
         api_key = settings.get_api_key()
         if api_key:
-            logger.info("Gemini API key detected successfully.")
             try:
                 # Initialize the new google-genai client
                 self.client = genai.Client(api_key=api_key)
@@ -60,7 +59,7 @@ class GeminiClient:
         self,
         prompt: str,
         config: Optional[Union[Dict[str, Any], types.GenerateContentConfig]] = None,
-        retries: int = 3
+        retries: int = 1 # Max 1 retry for transient failures
     ) -> str:
         if not self._initialized:
             raise HTTPException(
@@ -71,7 +70,7 @@ class GeminiClient:
         if self.quota_exhausted:
             raise HTTPException(
                 status_code=429,
-                detail="AI analysis quota has been exhausted for this session. Please retry later."
+                detail="AI analysis quota has been exhausted. Please retry later."
             )
 
         # Convert dict to types.GenerateContentConfig if needed
@@ -79,7 +78,7 @@ class GeminiClient:
             config = types.GenerateContentConfig(**config)
 
         last_error = None
-        for attempt in range(retries):
+        for attempt in range(retries + 1):
             try:
                 response = await asyncio.to_thread(
                     self.client.models.generate_content,
@@ -99,21 +98,22 @@ class GeminiClient:
                 last_error = e
                 error_str = str(e).lower()
 
-                # Check for retryable failures
-                if any(err in error_str for err in ["limit", "429", "500", "503", "unavailable", "timeout"]):
-                    if "429" in error_str or "limit" in error_str:
-                         self.quota_exhausted = True
-                         friendly_msg = self._map_error(error_str)
-                         raise HTTPException(status_code=429, detail=friendly_msg)
+                # Quota errors: NO RETRIES, set circuit breaker
+                if "limit" in error_str or "429" in error_str:
+                    self.quota_exhausted = True
+                    friendly_msg = self._map_error(error_str)
+                    raise HTTPException(status_code=429, detail=friendly_msg)
 
-                    if attempt < retries - 1:
+                # Transient failures: Retry if attempts remain
+                if any(err in error_str for err in ["500", "503", "unavailable", "timeout"]):
+                    if attempt < retries:
                         logger.warning(f"Gemini API attempt {attempt + 1} failed: {str(e)}. Retrying...")
-                        await asyncio.sleep(2 ** attempt) # Exponential backoff
+                        await asyncio.sleep(2 ** attempt)
                         continue
 
-                # If we're here, it's either a non-retryable error or we've exhausted retries
+                # Non-retryable or exhausted retries
                 friendly_msg = self._map_error(error_str)
-                logger.error(f"Gemini API Final Error: {str(e)}")
+                logger.error(f"Gemini API Error: {str(e)}")
                 raise HTTPException(status_code=500, detail=friendly_msg)
 
         friendly_msg = self._map_error(str(last_error))

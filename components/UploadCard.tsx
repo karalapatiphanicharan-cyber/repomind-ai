@@ -49,7 +49,13 @@ const ZIP_STAGES: LoadingStage[] = [
   { id: 'final', label: 'Finalizing report', icon: Zap, percentage: 100 }
 ];
 
-export default function UploadCard({ onAnalyze }: { onAnalyze: (data: AnalysisSummary) => void }) {
+export default function UploadCard({
+  onAnalyze,
+  initialData = null
+}: {
+  onAnalyze: (data: AnalysisSummary) => void,
+  initialData?: AnalysisSummary | null
+}) {
   const [fileName, setFileName] = useState<string | null>(null);
   const [githubUrl, setGithubUrl] = useState('');
   const [isDragging, setIsDragging] = useState(false);
@@ -65,6 +71,14 @@ export default function UploadCard({ onAnalyze }: { onAnalyze: (data: AnalysisSu
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const stages = sourceType === 'github' ? GITHUB_STAGES : ZIP_STAGES;
+
+  // Handle retry logic if initialData (preprocessed metadata) is provided
+  useEffect(() => {
+    if (initialData && !isLoading) {
+      // In a real retry, we might want to automatically trigger the AI part
+      // For Phase 3, we just ensure the UI is ready
+    }
+  }, [initialData, isLoading]);
 
   // Simulate progress for UI feel
   useEffect(() => {

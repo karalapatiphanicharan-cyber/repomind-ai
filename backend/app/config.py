@@ -1,11 +1,13 @@
 import os
+import logging
 from pathlib import Path
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from typing import Optional
 from dotenv import load_dotenv
 
+logger = logging.getLogger(__name__)
+
 # Explicitly load .env from the backend root directory
-# This file is in backend/app/config.py, so .env is in ../.env relative to this file
 backend_root = Path(__file__).resolve().parent.parent
 env_path = backend_root / ".env"
 load_dotenv(dotenv_path=env_path)
@@ -15,8 +17,8 @@ class Settings(BaseSettings):
     API_V1_STR: str = "/api"
 
     # Gemini Configuration
-    GEMINI_API_KEY: Optional[str] = None
     GOOGLE_API_KEY: Optional[str] = None
+    GEMINI_API_KEY: Optional[str] = None # Backward compatibility
     GEMINI_MODEL: str = "gemini-2.5-flash"
 
     # Temporary directory for processing
@@ -32,7 +34,20 @@ class Settings(BaseSettings):
     )
 
     def get_api_key(self) -> Optional[str]:
-        """Prioritizes GEMINI_API_KEY, then GOOGLE_API_KEY."""
-        return self.GEMINI_API_KEY or self.GOOGLE_API_KEY
+        """Prioritizes GOOGLE_API_KEY, then GEMINI_API_KEY."""
+        if self.GOOGLE_API_KEY:
+            # We don't log the key here because it's called multiple times
+            return self.GOOGLE_API_KEY
+        if self.GEMINI_API_KEY:
+            return self.GEMINI_API_KEY
+        return None
 
 settings = Settings()
+
+# Startup verification log
+if settings.GOOGLE_API_KEY:
+    print("Startup: Primary GOOGLE_API_KEY detected.")
+elif settings.GEMINI_API_KEY:
+    print("Startup: Using fallback GEMINI_API_KEY.")
+else:
+    print("Startup: No AI API key detected.")
