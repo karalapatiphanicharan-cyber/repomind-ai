@@ -5,6 +5,11 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 from typing import Optional
 from dotenv import load_dotenv
 
+# Configure root logger once
+logging.basicConfig(
+    level=logging.INFO,
+    format='[%(levelname)s] %(message)s'
+)
 logger = logging.getLogger(__name__)
 
 # Explicitly load .env from the backend root directory
@@ -36,7 +41,6 @@ class Settings(BaseSettings):
     def get_api_key(self) -> Optional[str]:
         """Prioritizes GOOGLE_API_KEY, then GEMINI_API_KEY."""
         if self.GOOGLE_API_KEY:
-            # We don't log the key here because it's called multiple times
             return self.GOOGLE_API_KEY
         if self.GEMINI_API_KEY:
             return self.GEMINI_API_KEY
@@ -44,10 +48,11 @@ class Settings(BaseSettings):
 
 settings = Settings()
 
-# Startup verification log
-if settings.GOOGLE_API_KEY:
-    print("Startup: Primary GOOGLE_API_KEY detected.")
-elif settings.GEMINI_API_KEY:
-    print("Startup: Using fallback GEMINI_API_KEY.")
-else:
-    print("Startup: No AI API key detected.")
+def log_startup_status():
+    """Triggered by main.py to avoid duplicates during reload if possible."""
+    if settings.GOOGLE_API_KEY:
+        logger.info("Primary GOOGLE_API_KEY detected.")
+    elif settings.GEMINI_API_KEY:
+        logger.info("Using fallback GEMINI_API_KEY.")
+    else:
+        logger.warning("No AI API key detected.")

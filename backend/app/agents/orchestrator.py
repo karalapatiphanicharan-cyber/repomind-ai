@@ -3,10 +3,6 @@ import logging
 import json
 import re
 from typing import Dict, Any, Optional
-from .code_agent import CodeAgent
-from .security_agent import SecurityAgent
-from .documentation_agent import DocumentationAgent
-from .planner_agent import PlannerAgent
 from ..services.report_builder import ReportBuilder
 from ..services.chunker import Chunker
 from ..services.gemini_client import gemini_client
@@ -69,8 +65,7 @@ class Orchestrator:
         project_name = project_data.get('project_name', 'Unknown')
         logger.info(f"Starting optimized AI analysis for project: {project_name}")
 
-        # Check cache if retry is triggered with same session ID (future use)
-        # For now, we use a simple project_name + root_dir hash or similar
+        # Check cache if retry is triggered with same session ID
         cache_key = f"{project_name}_{root_dir}"
         if cache_key in self._session_cache:
             logger.info("Returning cached AI analysis results.")
