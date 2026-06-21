@@ -7,6 +7,9 @@ const inter = Inter({ subsets: ["latin"] });
 export const metadata: Metadata = {
   title: "RepoMind AI",
   description: "Analyze Any Codebase with AI Agents",
+  icons: {
+    icon: '/favicon.svg',
+  },
 };
 
 export default function RootLayout({

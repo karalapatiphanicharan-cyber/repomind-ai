@@ -9,7 +9,10 @@ interface FeatureCardProps {
 
 export default function FeatureCard({ title, description, items, icon: Icon }: FeatureCardProps) {
   return (
-    <div className="h-full bg-surface border border-border/60 rounded-2xl p-8 hover:border-accent/40 hover:shadow-[0_0_30px_rgba(59,130,246,0.1)] transition-all duration-300 group">
+    <div
+      className="bg-surface border border-border rounded-2xl p-8 hover:border-accent/40 hover:shadow-xl hover:shadow-accent/5 transition-all duration-300 h-full group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40"
+      tabIndex={0}
+    >
       <div className="w-16 h-16 rounded-xl bg-accent/5 flex items-center justify-center mb-6 group-hover:bg-accent/10 group-hover:scale-110 transition-all duration-300">
         <Icon className="text-accent w-8 h-8" />
       </div>
