@@ -1,7 +1,7 @@
 'use client';
 
 import { Code2, ShieldAlert, FileText, Lightbulb } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { AnalysisSummary } from '@/types/analysis';
 import { AnimatePresence, motion } from 'framer-motion';
 import Navbar from '@/components/Navbar';
@@ -15,6 +15,15 @@ import Footer from '@/components/Footer';
 
 export default function Home() {
   const [analysisResult, setAnalysisResult] = useState<AnalysisSummary | null>(null);
+  const [analysisDuration, setAnalysisDuration] = useState<number | null>(null);
+  const startTimeRef = useRef<number | null>(null);
+
+  const handleAnalyzeComplete = (data: AnalysisSummary) => {
+    if (startTimeRef.current) {
+      setAnalysisDuration((Date.now() - startTimeRef.current) / 1000);
+    }
+    setAnalysisResult(data);
+  };
 
   const features = [
     {
@@ -51,7 +60,7 @@ export default function Home() {
         <Hero />
 
         <section id="analyze" className="pb-24 sm:pb-32">
-          <div className="max-w-4xl mx-auto px-4">
+          <div className="max-w-5xl mx-auto px-4">
             <AnimatePresence mode="wait">
               {!analysisResult ? (
                 <motion.div
@@ -61,7 +70,10 @@ export default function Home() {
                   exit={{ opacity: 0, scale: 0.95 }}
                   transition={{ duration: 0.4 }}
                 >
-                  <UploadCard onAnalyze={setAnalysisResult} />
+                  <UploadCard
+                    onAnalyze={handleAnalyzeComplete}
+                    onStart={() => { startTimeRef.current = Date.now(); }}
+                  />
                 </motion.div>
               ) : (
                 <motion.div
@@ -73,10 +85,14 @@ export default function Home() {
                 >
                   <SummaryCard
                     summary={analysisResult}
-                    onReset={() => setAnalysisResult(null)}
+                    duration={analysisDuration}
+                    onReset={() => {
+                      setAnalysisResult(null);
+                      startTimeRef.current = null;
+                    }}
                     onRetry={() => {
-                       // Future: re-run AI part only
-                       setAnalysisResult(null);
+                      setAnalysisResult(null);
+                      // In a real retry we'd re-trigger the logic
                     }}
                   />
                 </motion.div>

@@ -51,10 +51,10 @@ const ZIP_STAGES: LoadingStage[] = [
 
 export default function UploadCard({
   onAnalyze,
-  initialData = null
+  onStart
 }: {
   onAnalyze: (data: AnalysisSummary) => void,
-  initialData?: AnalysisSummary | null
+  onStart?: () => void
 }) {
   const [fileName, setFileName] = useState<string | null>(null);
   const [githubUrl, setGithubUrl] = useState('');
@@ -71,14 +71,6 @@ export default function UploadCard({
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const stages = sourceType === 'github' ? GITHUB_STAGES : ZIP_STAGES;
-
-  // Handle retry logic if initialData (preprocessed metadata) is provided
-  useEffect(() => {
-    if (initialData && !isLoading) {
-      // In a real retry, we might want to automatically trigger the AI part
-      // For Phase 3, we just ensure the UI is ready
-    }
-  }, [initialData, isLoading]);
 
   // Simulate progress for UI feel
   useEffect(() => {
@@ -138,6 +130,7 @@ export default function UploadCard({
   };
 
   const uploadZip = async (file: File) => {
+    onStart?.();
     setIsLoading(true);
     setSourceType('zip');
     setCurrentStage(0);
@@ -177,6 +170,7 @@ export default function UploadCard({
 
   const analyzeGithub = async () => {
     if (!githubUrl) return;
+    onStart?.();
     setIsLoading(true);
     setSourceType('github');
     setCurrentStage(0);
