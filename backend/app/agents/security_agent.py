@@ -24,6 +24,8 @@ class SecurityAgent:
                      response_text = match.group(1)
 
             return json.loads(response_text)
+        except HTTPException:
+            raise
         except Exception as e:
             logger.error(f"SecurityAgent error: {str(e)}")
             return {

@@ -24,6 +24,8 @@ class DocumentationAgent:
                      response_text = match.group(1)
 
             return json.loads(response_text)
+        except HTTPException:
+            raise
         except Exception as e:
             logger.error(f"DocumentationAgent error: {str(e)}")
             return {

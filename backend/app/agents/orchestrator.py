@@ -1,12 +1,13 @@
 import asyncio
 import logging
-from typing import Dict, Any
+from typing import Dict, Any, Optional
 from .code_agent import CodeAgent
 from .security_agent import SecurityAgent
 from .documentation_agent import DocumentationAgent
 from .planner_agent import PlannerAgent
 from ..services.report_builder import ReportBuilder
 from ..services.chunker import Chunker
+from fastapi import HTTPException
 
 logger = logging.getLogger(__name__)
 
@@ -57,6 +58,10 @@ class Orchestrator:
 
             return final_report
 
-        except Exception as e:
-            logger.error(f"Orchestrator error: {str(e)}")
+        except HTTPException as e:
+            # Re-raise mapped HTTP exceptions from GeminiClient
+            logger.error(f"Orchestrator HTTP error: {e.detail}")
             raise
+        except Exception as e:
+            logger.error(f"Orchestrator unexpected error: {str(e)}")
+            raise HTTPException(status_code=500, detail="An unexpected error occurred during project coordination.")

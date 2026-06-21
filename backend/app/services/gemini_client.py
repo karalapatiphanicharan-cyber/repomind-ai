@@ -37,6 +37,23 @@ class GeminiClient:
             logger.error("Gemini API key missing.")
             self._initialized = False
 
+    def _map_error(self, error_str: str) -> str:
+        """Maps technical Gemini errors to user-friendly messages."""
+        if "invalid api key" in error_str or "unauthenticated" in error_str:
+            return "The configured AI API key appears to be invalid."
+        if "not found" in error_str and "model" in error_str:
+            return f"The AI model '{self.model_name}' is currently unavailable."
+        if "limit" in error_str or "429" in error_str:
+            return "AI analysis quota has been temporarily exhausted. Please try again later."
+        if "503" in error_str or "unavailable" in error_str or "overloaded" in error_str:
+            return "The AI service is currently experiencing high demand. Please retry shortly."
+        if "timeout" in error_str or "408" in error_str:
+            return "AI analysis timed out. The repository might be too large or the service is slow."
+        if "network" in error_str or "connection" in error_str:
+            return "Unable to reach the AI service. Please check your connection and try again."
+
+        return "An unexpected AI service error occurred during analysis."
+
     async def generate_content(
         self,
         prompt: str,
@@ -46,7 +63,7 @@ class GeminiClient:
         if not self._initialized:
             raise HTTPException(
                 status_code=500,
-                detail="Gemini API is not configured. Please provide a valid GEMINI_API_KEY or GOOGLE_API_KEY."
+                detail="The configured AI API key appears to be invalid or missing."
             )
 
         # Convert dict to types.GenerateContentConfig if needed
@@ -72,23 +89,20 @@ class GeminiClient:
                 last_error = e
                 error_str = str(e).lower()
 
-                # Immediate failures (no retry)
-                if "invalid api key" in error_str or "unauthenticated" in error_str:
-                    raise HTTPException(status_code=401, detail="Invalid Gemini API Key.")
-                if "not found" in error_str or ("model" in error_str and "not found" in error_str):
-                     raise HTTPException(status_code=400, detail=f"Invalid Gemini model: {self.model_name}. Please ensure you have access to this model.")
+                # Check for retryable failures
+                if any(err in error_str for err in ["limit", "429", "500", "503", "unavailable", "timeout"]):
+                    if attempt < retries - 1:
+                        logger.warning(f"Gemini API attempt {attempt + 1} failed: {str(e)}. Retrying...")
+                        await asyncio.sleep(2 ** attempt) # Exponential backoff
+                        continue
 
-                # Retryable failures
-                if "limit" in error_str or "429" in error_str or "500" in error_str or "503" in error_str:
-                    logger.warning(f"Gemini API attempt {attempt + 1} failed: {str(e)}. Retrying...")
-                    await asyncio.sleep(2 ** attempt) # Exponential backoff
-                    continue
+                # If we're here, it's either a non-retryable error or we've exhausted retries
+                friendly_msg = self._map_error(error_str)
+                logger.error(f"Gemini API Final Error: {str(e)}")
+                raise HTTPException(status_code=500, detail=friendly_msg)
 
-                # Other errors
-                logger.error(f"Gemini API Error: {str(e)}")
-                raise HTTPException(status_code=500, detail=f"AI Analysis failed: {str(e)}")
-
-        raise HTTPException(status_code=500, detail=f"AI Analysis failed after {retries} attempts: {str(last_error)}")
+        friendly_msg = self._map_error(str(last_error))
+        raise HTTPException(status_code=500, detail=friendly_msg)
 
 # Singleton instance
 gemini_client = GeminiClient()
