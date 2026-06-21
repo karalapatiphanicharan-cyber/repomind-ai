@@ -1,6 +1,14 @@
 import os
+from pathlib import Path
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from typing import Optional
+from dotenv import load_dotenv
+
+# Explicitly load .env from the backend root directory
+# This file is in backend/app/config.py, so .env is in ../.env relative to this file
+backend_root = Path(__file__).resolve().parent.parent
+env_path = backend_root / ".env"
+load_dotenv(dotenv_path=env_path)
 
 class Settings(BaseSettings):
     PROJECT_NAME: str = "RepoMind AI API"
@@ -18,7 +26,7 @@ class Settings(BaseSettings):
     MAX_UPLOAD_SIZE: int = 50 * 1024 * 1024  # 50 MB
 
     model_config = SettingsConfigDict(
-        env_file="backend/.env",
+        env_file=str(env_path),
         env_file_encoding="utf-8",
         extra="ignore"
     )

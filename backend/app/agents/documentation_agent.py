@@ -28,7 +28,7 @@ class DocumentationAgent:
             logger.error(f"DocumentationAgent error: {str(e)}")
             return {
                 "score": 0,
-                "assessment": "Failed to evaluate documentation.",
-                "missing_sections": [],
-                "improvements": []
+                "assessment": f"Documentation review failed: {str(e)}",
+                "missing_sections": ["Information unavailable"],
+                "improvements": ["Check Gemini API key permissions."]
             }
