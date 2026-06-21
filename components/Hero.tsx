@@ -11,6 +11,15 @@ export default function Hero() {
     "Secure Temporary Processing"
   ];
 
+  const scrollToAnalyze = (focusType: 'zip' | 'github') => {
+    const element = document.getElementById('analyze');
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth' });
+      // Dispatch a custom event to trigger focus in UploadCard
+      window.dispatchEvent(new CustomEvent('repomind-focus', { detail: { type: focusType } }));
+    }
+  };
+
   return (
     <div className="relative pt-32 pb-16 sm:pt-48 sm:pb-32">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
@@ -37,10 +46,16 @@ export default function Hero() {
           transition={{ duration: 0.5, delay: 0.2 }}
           className="flex flex-col sm:flex-row justify-center items-center space-y-4 sm:space-y-0 sm:space-x-6 mb-12"
         >
-          <button className="w-full sm:w-auto h-14 px-10 rounded-xl bg-accent text-white font-semibold hover:bg-blue-600 hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 shadow-lg shadow-accent/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-4 focus-visible:ring-offset-background">
+          <button
+            onClick={() => scrollToAnalyze('zip')}
+            className="w-full sm:w-auto h-14 px-10 rounded-xl bg-accent text-white font-semibold hover:bg-blue-600 hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 shadow-lg shadow-accent/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-4 focus-visible:ring-offset-background cursor-pointer"
+          >
             Upload ZIP
           </button>
-          <button className="w-full sm:w-auto h-14 px-10 rounded-xl bg-surface border border-border text-primary-text font-semibold hover:border-accent hover:bg-surface/50 hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-4 focus-visible:ring-offset-background">
+          <button
+            onClick={() => scrollToAnalyze('github')}
+            className="w-full sm:w-auto h-14 px-10 rounded-xl bg-surface border border-border text-primary-text font-semibold hover:border-accent hover:bg-surface/50 hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-4 focus-visible:ring-offset-background cursor-pointer"
+          >
             Analyze GitHub Repository
           </button>
         </motion.div>
