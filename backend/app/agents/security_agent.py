@@ -13,10 +13,15 @@ class SecurityAgent:
         try:
             response_text = await gemini_client.generate_content(
                 prompt,
-                generation_config={"response_mime_type": "application/json"}
+                config={"response_mime_type": "application/json"}
             )
             if response_text.startswith("```json"):
                 response_text = response_text.replace("```json", "").replace("```", "").strip()
+            elif "```" in response_text:
+                 import re
+                 match = re.search(r'```json\s*(.*?)\s*```', response_text, re.DOTALL)
+                 if match:
+                     response_text = match.group(1)
 
             return json.loads(response_text)
         except Exception as e:

@@ -26,12 +26,8 @@ class Orchestrator:
         logger.info(f"Starting AI analysis for project: {project_data.get('project_name')}")
 
         try:
-            # 1. Read and chunk repository content
-            repo_text = self.chunker.get_repo_content(root_dir)
-            # For Phase 3, we take the first 30k chars as a simplified 'summary'
-            # if the repo is very large, or we could summarize chunks.
-            # Here we prioritize the most relevant context.
-            context = repo_text[:30000]
+            # 1. Summarize repository using chunking if necessary
+            context = await self.chunker.summarize_repo(root_dir)
 
             # 2. Run analysis agents in parallel
             logger.info("Invoking analysis agents...")

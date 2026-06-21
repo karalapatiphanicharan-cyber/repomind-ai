@@ -9,6 +9,8 @@ export const metadata: Metadata = {
   description: "Analyze Any Codebase with AI Agents",
   icons: {
     icon: '/favicon.svg',
+    shortcut: '/favicon.svg',
+    apple: '/favicon.svg',
   },
 };
 
