@@ -54,4 +54,5 @@ export interface AnalysisSummary {
   };
   top_level_directories: string[];
   ai_report?: AIReport;
+  ai_error?: string;
 }

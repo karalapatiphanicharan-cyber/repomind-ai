@@ -47,12 +47,20 @@ async def upload_zip(file: UploadFile = File(...)):
         scan_results = scanner.scan(project_name=project_name)
 
         # 2. Run AI Analysis (Phase 3)
-        ai_report = await orchestrator.analyze_project(scan_results, final_project_dir)
+        ai_report = None
+        ai_error = None
+        try:
+            ai_report = await orchestrator.analyze_project(scan_results, final_project_dir)
+        except HTTPException as e:
+            ai_error = e.detail
+        except Exception:
+            ai_error = "An unexpected error occurred during AI analysis."
 
         return {
             "success": True,
             **scan_results,
-            "ai_report": ai_report
+            "ai_report": ai_report,
+            "ai_error": ai_error
         }
 
     except HTTPException:

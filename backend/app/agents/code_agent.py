@@ -26,6 +26,8 @@ class CodeAgent:
                      response_text = match.group(1)
 
             return json.loads(response_text)
+        except HTTPException:
+            raise
         except Exception as e:
             logger.error(f"CodeAgent error: {str(e)}")
             return {

@@ -14,3 +14,4 @@ class ProjectSummary(BaseModel):
     top_level_directories: List[str]
     error: Optional[str] = None
     ai_report: Optional[Dict[str, Any]] = None
+    ai_error: Optional[str] = None

@@ -1,20 +1,38 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { Upload, Link as LinkIcon, FileCheck } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { Upload, Link as LinkIcon, CheckCircle2, Search, Zap, Code2, ShieldCheck, FileJson, AlertCircle } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { AnalysisSummary } from '@/types/analysis';
+
+const LOADING_STAGES = [
+  { id: 'prepare', label: 'Reading repository', icon: Search },
+  { id: 'extract', label: 'Extracting files', icon: FileJson },
+  { id: 'detect', label: 'Detecting languages', icon: Code2 },
+  { id: 'agents', label: 'Running AI agents', icon: Zap },
+  { id: 'report', label: 'Building report', icon: ShieldCheck }
+];
 
 export default function UploadCard({ onAnalyze }: { onAnalyze: (data: AnalysisSummary) => void }) {
   const [fileName, setFileName] = useState<string | null>(null);
   const [githubUrl, setGithubUrl] = useState('');
   const [isDragging, setIsDragging] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [loadingStep, setLoadingStep] = useState<string>('');
+  const [currentStage, setCurrentStage] = useState(0);
   const [error, setError] = useState<string | null>(null);
 
   const zipInputRef = useRef<HTMLInputElement>(null);
   const githubInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (isLoading && currentStage < LOADING_STAGES.length - 1) {
+      interval = setInterval(() => {
+        setCurrentStage(prev => Math.min(prev + 1, LOADING_STAGES.length - 1));
+      }, 2500); // Simulate progress through stages
+    }
+    return () => clearInterval(interval);
+  }, [isLoading, currentStage]);
 
   useEffect(() => {
     const handleFocus = (e: Event) => {
@@ -40,7 +58,7 @@ export default function UploadCard({ onAnalyze }: { onAnalyze: (data: AnalysisSu
 
   const uploadZip = async (file: File) => {
     setIsLoading(true);
-    setLoadingStep('Uploading and processing project...');
+    setCurrentStage(0);
     setError(null);
     const formData = new FormData();
     formData.append('file', file);
@@ -70,7 +88,7 @@ export default function UploadCard({ onAnalyze }: { onAnalyze: (data: AnalysisSu
   const analyzeGithub = async () => {
     if (!githubUrl) return;
     setIsLoading(true);
-    setLoadingStep('Cloning repository...');
+    setCurrentStage(0);
     setError(null);
 
     try {
@@ -121,36 +139,66 @@ export default function UploadCard({ onAnalyze }: { onAnalyze: (data: AnalysisSu
                   uploadZip(file);
                 }
               }}
-              className={`flex flex-col items-center justify-center w-full h-64 border-2 border-dashed rounded-2xl transition-all duration-300 cursor-pointer group focus-within:ring-2 focus-within:ring-accent focus-within:ring-offset-4 focus-within:ring-offset-background ${
+              className={`flex flex-col items-center justify-center w-full h-80 border-2 border-dashed rounded-2xl transition-all duration-300 cursor-pointer group focus-within:ring-2 focus-within:ring-accent focus-within:ring-offset-4 focus-within:ring-offset-background ${
                 isDragging
                   ? 'border-accent bg-accent/10 scale-[1.01]'
                   : 'border-border/60 hover:border-accent/50 hover:bg-accent/5'
-              }`}
+              } ${isLoading ? 'pointer-events-none' : ''}`}
             >
               <div className="flex flex-col items-center justify-center pt-5 pb-6 px-6 text-center">
-                <div className="w-16 h-16 rounded-full bg-accent/10 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300">
-                  <Upload className="w-8 h-8 text-accent" />
-                </div>
-                <p className="mb-2 text-lg text-primary-text font-semibold">
-                  {fileName ? 'Selected file:' : 'Drag & Drop your ZIP file here'}
-                </p>
-                <p className="text-sm text-secondary-text mb-6">
-                  {fileName ? fileName : 'Supported format: .zip (max 50MB)'}
-                </p>
-                {!fileName && !isLoading && (
-                  <div className="px-6 py-2.5 bg-surface border border-border rounded-xl text-sm font-semibold group-hover:border-accent group-hover:text-accent group-focus-within:border-accent group-focus-within:text-accent transition-all duration-300 group-active:scale-95">
-                    Choose ZIP File
-                  </div>
-                )}
-                {isLoading && (
-                  <div className="flex flex-col items-center">
-                    <div className="w-8 h-8 border-2 border-accent border-t-transparent rounded-full animate-spin mb-4" />
-                    <p className="text-sm font-bold text-accent">{loadingStep}</p>
-                    <div className="mt-4 flex flex-col gap-1 items-center">
-                      <p className="text-[10px] text-secondary-text animate-pulse">✓ Running Code Analysis Agent</p>
-                      <p className="text-[10px] text-secondary-text animate-pulse delay-75">✓ Security Review in Progress</p>
-                      <p className="text-[10px] text-secondary-text animate-pulse delay-150">⏳ Building Engineering Report</p>
+                {!isLoading ? (
+                  <>
+                    <div className="w-16 h-16 rounded-full bg-accent/10 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300">
+                      <Upload className="w-8 h-8 text-accent" />
                     </div>
+                    <p className="mb-2 text-lg text-primary-text font-semibold">
+                      {fileName ? 'Selected file:' : 'Drag & Drop your ZIP file here'}
+                    </p>
+                    <p className="text-sm text-secondary-text mb-6">
+                      {fileName ? fileName : 'Supported format: .zip (max 50MB)'}
+                    </p>
+                    {!fileName && (
+                      <div className="px-6 py-2.5 bg-surface border border-border rounded-xl text-sm font-semibold group-hover:border-accent group-hover:text-accent group-focus-within:border-accent group-focus-within:text-accent transition-all duration-300 group-active:scale-95">
+                        Choose ZIP File
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <div className="w-full max-w-sm space-y-8">
+                     <div className="flex flex-col items-center">
+                        <div className="relative w-16 h-16 mb-6">
+                           <div className="absolute inset-0 border-2 border-accent/20 rounded-full"></div>
+                           <div className="absolute inset-0 border-2 border-accent border-t-transparent rounded-full animate-spin"></div>
+                           <div className="absolute inset-0 flex items-center justify-center">
+                              {(() => {
+                                 const Icon = LOADING_STAGES[currentStage].icon;
+                                 return <Icon className="w-6 h-6 text-accent" />;
+                              })()}
+                           </div>
+                        </div>
+                        <h3 className="text-xl font-bold text-primary-text mb-2">Analyzing Project</h3>
+                        <p className="text-sm text-secondary-text">This may take a minute for large repositories.</p>
+                     </div>
+
+                     <div className="space-y-3">
+                        {LOADING_STAGES.map((stage, idx) => (
+                           <div key={stage.id} className="flex items-center justify-between">
+                              <div className="flex items-center space-x-3">
+                                 {idx < currentStage ? (
+                                    <CheckCircle2 className="w-4 h-4 text-green-500" />
+                                 ) : idx === currentStage ? (
+                                    <div className="w-4 h-4 border-2 border-accent border-t-transparent rounded-full animate-spin" />
+                                 ) : (
+                                    <div className="w-4 h-4 rounded-full border border-border/60" />
+                                 )}
+                                 <span className={`text-xs font-medium ${idx === currentStage ? 'text-primary-text' : 'text-secondary-text/60'}`}>
+                                    {stage.label}
+                                 </span>
+                              </div>
+                              {idx < currentStage && <span className="text-[10px] font-bold text-green-500 uppercase tracking-tighter">Done</span>}
+                           </div>
+                        ))}
+                     </div>
                   </div>
                 )}
               </div>
@@ -164,25 +212,23 @@ export default function UploadCard({ onAnalyze }: { onAnalyze: (data: AnalysisSu
                 disabled={isLoading}
               />
             </label>
-            {fileName && !isLoading && (
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="mt-4 flex items-center justify-center text-accent text-sm font-bold"
-              >
-                <FileCheck className="w-4 h-4 mr-2" />
-                Processing {fileName}
-              </motion.div>
-            )}
-            {error && (
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="mt-4 p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-500 text-sm text-center font-medium"
-              >
-                {error}
-              </motion.div>
-            )}
+
+            <AnimatePresence>
+              {error && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  exit={{ opacity: 0, height: 0 }}
+                  className="mt-6 p-4 rounded-xl bg-red-500/10 border border-red-500/20 flex items-start space-x-3"
+                >
+                  <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-sm font-bold text-red-500">Analysis failed to start</p>
+                    <p className="text-xs text-red-400/80 mt-1">{error}</p>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
 
           <div className="relative flex items-center py-2">
