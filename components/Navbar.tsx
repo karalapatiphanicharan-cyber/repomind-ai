@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { GitBranch } from 'lucide-react';
+import { Brain, GitBranch } from 'lucide-react';
 
 export default function Navbar() {
   return (
@@ -7,14 +7,17 @@ export default function Navbar() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           <div className="flex items-center">
-            <Link href="/" className="text-xl font-bold text-primary-text tracking-tight">
-              RepoMind <span className="text-accent">AI</span>
+            <Link href="/" className="flex items-center space-x-2 group">
+              <Brain className="w-8 h-8 text-accent group-hover:scale-110 transition-transform duration-300" />
+              <span className="text-xl font-bold text-primary-text tracking-tight">
+                RepoMind <span className="text-accent">AI</span>
+              </span>
             </Link>
           </div>
           <div className="flex items-center space-x-4">
-            <button className="flex items-center space-x-2 px-4 py-2 rounded-lg bg-surface border border-border text-secondary-text hover:text-primary-text hover:border-accent transition-colors">
+            <button className="flex items-center space-x-2 px-4 py-2 rounded-lg bg-surface border border-border text-secondary-text hover:text-primary-text hover:border-accent hover:bg-surface/50 transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background">
               <GitBranch size={18} />
-              <span>GitHub</span>
+              <span className="text-sm font-medium">GitHub</span>
             </button>
           </div>
         </div>
