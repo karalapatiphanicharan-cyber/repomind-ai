@@ -10,7 +10,8 @@ class ReportBuilder:
         code_results: Dict[str, Any],
         security_results: Dict[str, Any],
         docs_results: Dict[str, Any],
-        plan_results: Dict[str, Any]
+        plan_results: Dict[str, Any],
+        roadmap_results: Dict[str, Any] = None
     ) -> Dict[str, Any]:
 
         # Calculate overall score based on individual agent scores (weighted)
@@ -59,6 +60,10 @@ class ReportBuilder:
                 "high": plan_results.get("high", []),
                 "medium": plan_results.get("medium", []),
                 "low": plan_results.get("low", [])
+            },
+            "strategic_roadmap": {
+                "next_steps": roadmap_results.get("next_steps", "") if roadmap_results else "",
+                "business_impact": roadmap_results.get("business_impact", "") if roadmap_results else ""
             },
             "overall_recommendation": plan_results.get("overall_recommendation", "")
         }

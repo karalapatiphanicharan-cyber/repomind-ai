@@ -1,7 +1,7 @@
 'use client';
 
 import { Code2, ShieldAlert, FileText, Lightbulb } from 'lucide-react';
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { AnalysisSummary } from '@/types/analysis';
 import { AnimatePresence, motion } from 'framer-motion';
 import Navbar from '@/components/Navbar';
@@ -12,22 +12,37 @@ import HowItWorks from '@/components/HowItWorks';
 import Agents from '@/components/Agents';
 import FeatureCard from '@/components/FeatureCard';
 import Footer from '@/components/Footer';
+import { DEMO_REPORT } from '@/lib/demo-data';
 
 export default function Home() {
   const [analysisResult, setAnalysisResult] = useState<AnalysisSummary | null>(null);
   const [analysisDuration, setAnalysisDuration] = useState<number | null>(null);
   const [retryTrigger, setRetryTrigger] = useState(0);
+  const [isDemoMode, setIsDemoMode] = useState(false);
   const startTimeRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    const handleDemoMode = () => {
+      setIsDemoMode(true);
+      setAnalysisResult(DEMO_REPORT);
+      setAnalysisDuration(0.5);
+    };
+
+    window.addEventListener('repomind-demo-mode', handleDemoMode);
+    return () => window.removeEventListener('repomind-demo-mode', handleDemoMode);
+  }, []);
 
   const handleAnalyzeComplete = (data: AnalysisSummary) => {
     if (startTimeRef.current) {
       setAnalysisDuration((Date.now() - startTimeRef.current) / 1000);
     }
     setAnalysisResult(data);
+    setIsDemoMode(false);
   };
 
   const handleStartAnalysis = () => {
     startTimeRef.current = Date.now();
+    setIsDemoMode(false);
   };
 
   const handleReset = () => {
@@ -35,12 +50,13 @@ export default function Home() {
     setAnalysisDuration(null);
     startTimeRef.current = null;
     setRetryTrigger(0);
+    setIsDemoMode(false);
   };
 
   const handleRetry = () => {
-    // We clear the result but keep the trigger to tell UploadCard to try again with its existing state
     setAnalysisResult(null);
     setRetryTrigger(prev => prev + 1);
+    setIsDemoMode(false);
   };
 
   const features = [
@@ -107,6 +123,7 @@ export default function Home() {
                     duration={analysisDuration}
                     onReset={handleReset}
                     onRetry={handleRetry}
+                    isDemo={isDemoMode}
                   />
                 </motion.div>
               )}

@@ -1,7 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { Check } from 'lucide-react';
+import { Check, Sparkles } from 'lucide-react';
 
 export default function Hero() {
   const trustIndicators = [
@@ -17,6 +17,14 @@ export default function Hero() {
       element.scrollIntoView({ behavior: 'smooth' });
       // Dispatch a custom event to trigger focus in UploadCard
       window.dispatchEvent(new CustomEvent('repomind-focus', { detail: { type: focusType } }));
+    }
+  };
+
+  const handleDemoMode = () => {
+    window.dispatchEvent(new CustomEvent('repomind-demo-mode'));
+    const element = document.getElementById('analyze');
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth' });
     }
   };
 
@@ -57,6 +65,13 @@ export default function Hero() {
             className="w-full sm:w-auto h-14 px-10 rounded-xl bg-surface border border-border text-primary-text font-semibold hover:border-accent hover:bg-surface/50 hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-4 focus-visible:ring-offset-background cursor-pointer"
           >
             Analyze GitHub Repository
+          </button>
+          <button
+            onClick={handleDemoMode}
+            className="w-full sm:w-auto h-14 px-10 rounded-xl bg-surface border border-accent/30 text-accent font-semibold hover:bg-accent/10 hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 flex items-center justify-center group cursor-pointer"
+          >
+            <Sparkles className="w-5 h-5 mr-2 group-hover:animate-spin-slow" />
+            ✨ View Demo Report
           </button>
         </motion.div>
 

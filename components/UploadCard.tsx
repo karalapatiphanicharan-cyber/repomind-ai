@@ -106,7 +106,8 @@ export default function UploadCard({
     formData.append('file', file);
 
     try {
-      const response = await fetch('http://localhost:8000/api/upload', {
+      const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+      const response = await fetch(`${baseUrl}/api/upload`, {
         method: 'POST',
         body: formData,
         signal: abortControllerRef.current.signal
@@ -143,7 +144,8 @@ export default function UploadCard({
     abortControllerRef.current = new AbortController();
 
     try {
-      const response = await fetch('http://localhost:8000/api/github', {
+      const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+      const response = await fetch(`${baseUrl}/api/github`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ url: githubUrl }),

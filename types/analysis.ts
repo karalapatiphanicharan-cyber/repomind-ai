@@ -36,6 +36,10 @@ export interface AIReport {
     medium: string[];
     low: string[];
   };
+  strategic_roadmap: {
+    next_steps: string;
+    business_impact: string;
+  };
   overall_recommendation: string;
 }
 

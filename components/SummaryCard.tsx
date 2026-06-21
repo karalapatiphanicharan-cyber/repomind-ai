@@ -26,7 +26,9 @@ import {
   Info,
   Check,
   LucideIcon,
-  FileText
+  FileText,
+  Sparkles,
+  ArrowLeft
 } from 'lucide-react';
 import { AnalysisSummary } from '@/types/analysis';
 
@@ -35,6 +37,7 @@ interface SummaryCardProps {
   duration?: number | null;
   onReset: () => void;
   onRetry?: () => void;
+  isDemo?: boolean;
 }
 
 const ScoreBadge = ({ score }: { score: number }) => {
@@ -126,7 +129,7 @@ const CollapsibleSection = ({
   );
 };
 
-export default function SummaryCard({ summary, duration, onReset, onRetry }: SummaryCardProps) {
+export default function SummaryCard({ summary, duration, onReset, onRetry, isDemo = false }: SummaryCardProps) {
   const aiReport = summary.ai_report;
   const aiError = summary.ai_error;
   const timestamp = new Date().toLocaleString();
@@ -169,10 +172,22 @@ export default function SummaryCard({ summary, duration, onReset, onRetry }: Sum
             <BarChart3 className="w-7 h-7" />
           </div>
           <div>
-            <h1 className="text-3xl font-black text-primary-text tracking-tight">
-               {aiReport ? 'Analysis Complete' : 'Preprocessing Complete'}
-            </h1>
-            <p className="text-[10px] text-secondary-text font-black uppercase tracking-[0.2em] opacity-60">Session Report • {timestamp}</p>
+            <div className="flex items-center space-x-3">
+              <h1 className="text-3xl font-black text-primary-text tracking-tight">
+                {aiReport ? 'Analysis Complete' : 'Preprocessing Complete'}
+              </h1>
+              {isDemo && (
+                <span className="flex items-center space-x-1 px-3 py-1 rounded-full bg-accent/10 border border-accent/20 text-[10px] font-black uppercase tracking-widest text-accent">
+                  <Sparkles className="w-3 h-3" />
+                  <span>Demo Report</span>
+                </span>
+              )}
+            </div>
+            <div className="flex items-center space-x-2 mt-1">
+              <span className="text-xs font-black text-accent uppercase tracking-widest">{summary.project_name}</span>
+              <span className="text-[10px] text-secondary-text font-black uppercase tracking-[0.2em] opacity-40">•</span>
+              <p className="text-[10px] text-secondary-text font-black uppercase tracking-[0.2em] opacity-60">Session Report • {timestamp}</p>
+            </div>
           </div>
         </div>
         <div className="flex flex-wrap justify-center gap-3">
@@ -249,7 +264,9 @@ export default function SummaryCard({ summary, duration, onReset, onRetry }: Sum
               </div>
            </div>
 
-           <button onClick={onReset} aria-label="Start a new analysis" className="mt-10 w-full py-4 rounded-2xl bg-background border border-border text-[10px] font-black uppercase tracking-[0.3em] text-secondary-text hover:text-accent hover:border-accent transition-all active:scale-95 shadow-lg cursor-pointer">Analyze Another</button>
+           <button onClick={onReset} aria-label={isDemo ? "Back to live analysis" : "Analyze another project"} className="mt-10 w-full py-4 rounded-2xl bg-background border border-border text-[10px] font-black uppercase tracking-[0.3em] text-secondary-text hover:text-accent hover:border-accent transition-all active:scale-95 shadow-lg cursor-pointer flex items-center justify-center">
+              {isDemo ? <><ArrowLeft className="w-4 h-4 mr-2" /> Live Analysis</> : "Analyze Another"}
+           </button>
         </motion.div>
       </div>
 
@@ -448,11 +465,11 @@ export default function SummaryCard({ summary, duration, onReset, onRetry }: Sum
                <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
                   <div className="p-10 rounded-[2.5rem] bg-surface border border-border/40 hover:border-accent/30 transition-colors shadow-lg">
                      <h5 className="text-[11px] font-black uppercase tracking-[0.3em] text-secondary-text/40 mb-6 flex items-center"><Zap className="w-4 h-4 mr-3" /> Next Steps</h5>
-                     <p className="text-base text-secondary-text leading-relaxed font-medium">Focus on stabilizing core architecture while addressing identified security gaps. Technical debt reduction should be prioritized in the next sprint cycle to ensure scalable growth.</p>
+                     <p className="text-base text-secondary-text leading-relaxed font-medium">{aiReport.strategic_roadmap.next_steps}</p>
                   </div>
                   <div className="p-10 rounded-[2.5rem] bg-surface border border-border/40 hover:border-accent/30 transition-colors shadow-lg">
                      <h5 className="text-[11px] font-black uppercase tracking-[0.3em] text-secondary-text/40 mb-6 flex items-center"><TrendingUp className="w-4 h-4 mr-3" /> Business Impact</h5>
-                     <p className="text-base text-secondary-text leading-relaxed font-medium">Improving maintainability and documentation will reduce developer onboarding time by an estimated 30% and significantly decrease long-term maintenance overhead.</p>
+                     <p className="text-base text-secondary-text leading-relaxed font-medium">{aiReport.strategic_roadmap.business_impact}</p>
                   </div>
                </div>
             </div>
@@ -470,6 +487,19 @@ export default function SummaryCard({ summary, duration, onReset, onRetry }: Sum
            <p className="text-xl font-black text-secondary-text/40 tracking-tight mb-2">No analysis report available.</p>
            <p className="text-sm text-secondary-text/30 italic max-w-sm mx-auto">Upload a ZIP file or GitHub repository to generate an automated engineering audit.</p>
         </motion.div>
+      )}
+
+      {isDemo && (
+         <div className="bg-accent/10 border border-accent/20 rounded-[2rem] p-10 text-center shadow-xl">
+            <div className="w-12 h-12 rounded-full bg-accent/20 flex items-center justify-center text-accent mx-auto mb-6">
+               <Sparkles className="w-6 h-6" />
+            </div>
+            <h3 className="text-xl font-black text-primary-text mb-2">Ready to analyze your own project?</h3>
+            <p className="text-secondary-text mb-8 max-w-md mx-auto">This demo uses pre-populated data. For a real engineering audit, upload your codebase.</p>
+            <button onClick={onReset} className="px-8 py-3 bg-accent text-white font-black uppercase tracking-widest text-xs rounded-xl hover:bg-blue-600 transition-all shadow-lg active:scale-95 cursor-pointer">
+               Analyze Real Repository
+            </button>
+         </div>
       )}
     </div>
   );

@@ -46,6 +46,10 @@ Respond strictly with a valid JSON object following this schema:
     "medium": ["list"],
     "low": ["list"]
   }},
+  "strategic_roadmap": {
+    "next_steps": "string",
+    "business_impact": "string"
+  },
   "overall_recommendation": "string",
   "maintainability_score": 0-100,
   "overview": "string"
@@ -108,7 +112,8 @@ class Orchestrator:
                 full_results.get("code_analysis", {}),
                 full_results.get("security_review", {}),
                 full_results.get("documentation_review", {}),
-                full_results.get("action_plan", {})
+                full_results.get("action_plan", {}),
+                full_results.get("strategic_roadmap", {})
             )
 
             # Inject master overview if available
