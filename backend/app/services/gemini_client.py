@@ -29,6 +29,7 @@ class GeminiClient:
                 self.client = genai.Client(api_key=api_key)
                 self.model_name = settings.GEMINI_MODEL
                 self._initialized = True
+                self.quota_exhausted = False # Circuit breaker
                 logger.info(f"GeminiClient initialized successfully with model: {self.model_name}")
             except Exception as e:
                 logger.error(f"Failed to initialize GeminiClient: {str(e)}")
@@ -44,6 +45,7 @@ class GeminiClient:
         if "not found" in error_str and "model" in error_str:
             return f"The AI model '{self.model_name}' is currently unavailable."
         if "limit" in error_str or "429" in error_str:
+            self.quota_exhausted = True
             return "AI analysis quota has been temporarily exhausted. Please try again later."
         if "503" in error_str or "unavailable" in error_str or "overloaded" in error_str:
             return "The AI service is currently experiencing high demand. Please retry shortly."
@@ -66,6 +68,12 @@ class GeminiClient:
                 detail="The configured AI API key appears to be invalid or missing."
             )
 
+        if self.quota_exhausted:
+            raise HTTPException(
+                status_code=429,
+                detail="AI analysis quota has been exhausted for this session. Please retry later."
+            )
+
         # Convert dict to types.GenerateContentConfig if needed
         if isinstance(config, dict):
             config = types.GenerateContentConfig(**config)
@@ -83,6 +91,8 @@ class GeminiClient:
                 if not response or not response.text:
                     raise ValueError("Empty response from Gemini")
 
+                # Reset circuit breaker on success
+                self.quota_exhausted = False
                 return response.text
 
             except Exception as e:
@@ -91,6 +101,11 @@ class GeminiClient:
 
                 # Check for retryable failures
                 if any(err in error_str for err in ["limit", "429", "500", "503", "unavailable", "timeout"]):
+                    if "429" in error_str or "limit" in error_str:
+                         self.quota_exhausted = True
+                         friendly_msg = self._map_error(error_str)
+                         raise HTTPException(status_code=429, detail=friendly_msg)
+
                     if attempt < retries - 1:
                         logger.warning(f"Gemini API attempt {attempt + 1} failed: {str(e)}. Retrying...")
                         await asyncio.sleep(2 ** attempt) # Exponential backoff

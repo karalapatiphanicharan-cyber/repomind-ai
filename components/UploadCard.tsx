@@ -4,10 +4,8 @@ import { useState, useEffect, useRef } from 'react';
 import {
   Upload,
   Link as LinkIcon,
-  CheckCircle2,
   Zap,
   Code2,
-  ShieldCheck,
   FileJson,
   AlertCircle,
   Brain,
@@ -15,33 +13,40 @@ import {
   XCircle,
   RefreshCw,
   Layout,
-  FileText,
-  ClipboardList,
-  Check
+  Check,
+  Search,
+  Globe,
+  LucideIcon
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { AnalysisSummary } from '@/types/analysis';
 
-const LOADING_STAGES = [
-  { id: 'received', label: 'Repository received', icon: CheckCircle2, weight: 5 },
-  { id: 'cloning', label: 'Cloning repository', icon: RefreshCw, weight: 15 },
-  { id: 'extracting', label: 'Extracting files', icon: FileJson, weight: 10 },
-  { id: 'languages', label: 'Detecting languages', icon: Code2, weight: 10 },
-  { id: 'map', label: 'Building project map', icon: Layout, weight: 10 },
-  { id: 'code', label: 'Running Code Analysis', icon: Brain, weight: 10 },
-  { id: 'security', label: 'Security Review', icon: ShieldCheck, weight: 10 },
-  { id: 'docs', label: 'Documentation Review', icon: FileText, weight: 10 },
-  { id: 'plan', label: 'Action Plan', icon: ClipboardList, weight: 10 },
-  { id: 'final', label: 'Finalizing report', icon: Zap, weight: 10 }
+type SourceType = 'github' | 'zip' | null;
+
+interface LoadingStage {
+  id: string;
+  label: string;
+  icon: LucideIcon;
+  percentage: number;
+}
+
+const GITHUB_STAGES: LoadingStage[] = [
+  { id: 'received', label: 'Validating URL', icon: Globe, percentage: 10 },
+  { id: 'cloning', label: 'Cloning repository', icon: RefreshCw, percentage: 25 },
+  { id: 'extracting', label: 'Reading files', icon: Search, percentage: 40 },
+  { id: 'languages', label: 'Detecting languages', icon: Code2, percentage: 55 },
+  { id: 'map', label: 'Building project map', icon: Layout, percentage: 70 },
+  { id: 'agents', label: 'Running AI analysis', icon: Brain, percentage: 85 },
+  { id: 'final', label: 'Finalizing report', icon: Zap, percentage: 100 }
 ];
 
-const STATUS_MESSAGES = [
-  "Inspecting repository structure...",
-  "Detecting technologies...",
-  "Evaluating security patterns...",
-  "Reviewing documentation...",
-  "Generating engineering recommendations...",
-  "Finalizing AI report..."
+const ZIP_STAGES: LoadingStage[] = [
+  { id: 'received', label: 'Uploading archive', icon: Upload, percentage: 15 },
+  { id: 'extracting', label: 'Extracting ZIP', icon: FileJson, percentage: 35 },
+  { id: 'languages', label: 'Detecting languages', icon: Code2, percentage: 50 },
+  { id: 'map', label: 'Building project map', icon: Layout, percentage: 65 },
+  { id: 'agents', label: 'Running AI analysis', icon: Brain, percentage: 80 },
+  { id: 'final', label: 'Finalizing report', icon: Zap, percentage: 100 }
 ];
 
 export default function UploadCard({ onAnalyze }: { onAnalyze: (data: AnalysisSummary) => void }) {
@@ -49,8 +54,8 @@ export default function UploadCard({ onAnalyze }: { onAnalyze: (data: AnalysisSu
   const [githubUrl, setGithubUrl] = useState('');
   const [isDragging, setIsDragging] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [sourceType, setSourceType] = useState<SourceType>(null);
   const [currentStage, setCurrentStage] = useState(0);
-  const [statusIdx, setStatusIdx] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [isTimeout, setIsTimeout] = useState(false);
 
@@ -59,27 +64,18 @@ export default function UploadCard({ onAnalyze }: { onAnalyze: (data: AnalysisSu
   const abortControllerRef = useRef<AbortController | null>(null);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Rotate status messages
-  useEffect(() => {
-    let interval: NodeJS.Timeout;
-    if (isLoading) {
-      interval = setInterval(() => {
-        setStatusIdx(prev => (prev + 1) % STATUS_MESSAGES.length);
-      }, 3500);
-    }
-    return () => clearInterval(interval);
-  }, [isLoading]);
+  const stages = sourceType === 'github' ? GITHUB_STAGES : ZIP_STAGES;
 
   // Simulate progress for UI feel
   useEffect(() => {
     let interval: NodeJS.Timeout;
-    if (isLoading && currentStage < LOADING_STAGES.length - 1) {
+    if (isLoading && currentStage < stages.length - 1) {
       interval = setInterval(() => {
-        setCurrentStage(prev => Math.min(prev + 1, LOADING_STAGES.length - 1));
+        setCurrentStage(prev => Math.min(prev + 1, stages.length - 1));
       }, 3000);
     }
     return () => clearInterval(interval);
-  }, [isLoading, currentStage]);
+  }, [isLoading, currentStage, stages.length]);
 
   useEffect(() => {
     const handleFocus = (e: Event) => {
@@ -97,6 +93,7 @@ export default function UploadCard({ onAnalyze }: { onAnalyze: (data: AnalysisSu
 
   const resetState = () => {
     setIsLoading(false);
+    setSourceType(null);
     setCurrentStage(0);
     setError(null);
     setIsTimeout(false);
@@ -128,6 +125,7 @@ export default function UploadCard({ onAnalyze }: { onAnalyze: (data: AnalysisSu
 
   const uploadZip = async (file: File) => {
     setIsLoading(true);
+    setSourceType('zip');
     setCurrentStage(0);
     setError(null);
     setIsTimeout(false);
@@ -166,6 +164,7 @@ export default function UploadCard({ onAnalyze }: { onAnalyze: (data: AnalysisSu
   const analyzeGithub = async () => {
     if (!githubUrl) return;
     setIsLoading(true);
+    setSourceType('github');
     setCurrentStage(0);
     setError(null);
     setIsTimeout(false);
@@ -199,9 +198,7 @@ export default function UploadCard({ onAnalyze }: { onAnalyze: (data: AnalysisSu
     }
   };
 
-  const progressPercentage = Math.round(
-    (LOADING_STAGES.slice(0, currentStage + 1).reduce((acc, stage) => acc + stage.weight, 0) / 100) * 100
-  );
+  const progressPercentage = stages[currentStage].percentage;
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-12">
@@ -260,6 +257,7 @@ export default function UploadCard({ onAnalyze }: { onAnalyze: (data: AnalysisSu
                     className="sr-only"
                     accept=".zip"
                     onChange={handleFileChange}
+                    disabled={isLoading}
                   />
                 </label>
 
@@ -301,11 +299,12 @@ export default function UploadCard({ onAnalyze }: { onAnalyze: (data: AnalysisSu
                     value={githubUrl}
                     onChange={(e) => setGithubUrl(e.target.value)}
                     aria-label="GitHub Repository URL"
+                    disabled={isLoading}
                   />
                 </div>
                 <button
                   onClick={analyzeGithub}
-                  disabled={!githubUrl}
+                  disabled={!githubUrl || isLoading}
                   className="w-full h-14 rounded-xl bg-accent text-white font-bold hover:bg-blue-600 hover:scale-[1.01] transition-all duration-300 shadow-lg shadow-accent/20 flex items-center justify-center active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-4 focus-visible:ring-offset-background cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Analyze Repository
@@ -326,15 +325,15 @@ export default function UploadCard({ onAnalyze }: { onAnalyze: (data: AnalysisSu
                         <Brain className="w-12 h-12 text-accent" />
                      </motion.div>
                   </div>
-                  <h2 className="text-3xl font-black text-primary-text mb-2 text-center">Analyzing Repository</h2>
-                  <p className="text-secondary-text font-medium animate-pulse text-center">{STATUS_MESSAGES[statusIdx]}</p>
+                  <h2 className="text-3xl font-black text-primary-text mb-2 text-center tracking-tight">Analyzing Project</h2>
+                  <p className="text-secondary-text font-medium animate-pulse text-center">{stages[currentStage].label}...</p>
                </div>
 
                <div className="max-w-md mx-auto space-y-8">
                   {/* Progress Bar */}
                   <div className="space-y-3">
                      <div className="flex justify-between items-end">
-                        <span className="text-xs font-bold text-secondary-text/60 uppercase tracking-widest">Progress</span>
+                        <span className="text-xs font-bold text-secondary-text/60 uppercase tracking-widest">Analysis Progress</span>
                         <span className="text-lg font-black text-accent">{progressPercentage}%</span>
                      </div>
                      <div className="h-3 w-full bg-background border border-border/40 rounded-full overflow-hidden p-0.5">
@@ -349,9 +348,10 @@ export default function UploadCard({ onAnalyze }: { onAnalyze: (data: AnalysisSu
 
                   {/* Stages List */}
                   <div className="bg-background/40 border border-border/40 rounded-2xl p-6 space-y-4">
-                     {LOADING_STAGES.map((stage, idx) => {
+                     {stages.map((stage, idx) => {
                         const isCompleted = idx < currentStage;
                         const isActive = idx === currentStage;
+                        const StageIcon = stage.icon;
                         return (
                            <div key={stage.id} className={`flex items-center justify-between transition-all duration-500 ${isActive ? 'scale-[1.02]' : ''}`}>
                               <div className="flex items-center space-x-4">
@@ -360,7 +360,7 @@ export default function UploadCard({ onAnalyze }: { onAnalyze: (data: AnalysisSu
                                     isActive ? 'bg-accent/10 text-accent animate-pulse' :
                                     'bg-border/20 text-secondary-text/30'
                                  }`}>
-                                    {isCompleted ? <Check className="w-4 h-4" /> : <stage.icon className={`w-4 h-4 ${isActive ? 'animate-spin' : ''}`} />}
+                                    {isCompleted ? <Check className="w-4 h-4" /> : <StageIcon className={`w-4 h-4 ${isActive ? 'animate-spin' : ''}`} />}
                                  </div>
                                  <span className={`text-sm font-bold transition-colors duration-500 ${
                                     isCompleted ? 'text-primary-text' :
@@ -392,7 +392,7 @@ export default function UploadCard({ onAnalyze }: { onAnalyze: (data: AnalysisSu
                           <Clock className="w-4 h-4" />
                           <span className="text-xs font-bold uppercase tracking-wider">Analysis Delay</span>
                         </div>
-                        <p className="text-xs text-secondary-text">The AI service is taking longer than expected. You can continue waiting or try again.</p>
+                        <p className="text-xs text-secondary-text">The AI service is taking longer than expected. The provider may be under heavy load.</p>
                         <div className="flex gap-2 w-full">
                            <button onClick={() => setIsTimeout(false)} className="flex-1 py-2 bg-yellow-500/10 border border-yellow-500/20 rounded-lg text-[10px] font-bold text-yellow-500 hover:bg-yellow-500/20 transition-all uppercase tracking-tighter">Continue Waiting</button>
                            <button onClick={cancelAnalysis} className="flex-1 py-2 bg-surface border border-border rounded-lg text-[10px] font-bold text-secondary-text hover:text-accent transition-all uppercase tracking-tighter">Analyze Another</button>
