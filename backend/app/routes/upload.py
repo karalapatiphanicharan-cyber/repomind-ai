@@ -1,5 +1,6 @@
 import os
 import uuid
+from pathlib import Path
 from fastapi import APIRouter, UploadFile, File, HTTPException
 from ..config import settings
 from ..services.zip_processor import ZipProcessor
@@ -36,9 +37,12 @@ async def upload_zip(file: UploadFile = File(...)):
         # Process ZIP
         final_project_dir = ZipProcessor.extract_safely(zip_path, extract_dir)
 
+        # Extract project name from filename
+        project_name = Path(file.filename).stem
+
         # Scan files
         scanner = FileScanner(final_project_dir)
-        scan_results = scanner.scan()
+        scan_results = scanner.scan(project_name=project_name)
 
         return {
             "success": True,

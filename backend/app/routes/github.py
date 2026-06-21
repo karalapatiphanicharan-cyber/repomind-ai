@@ -23,9 +23,15 @@ async def analyze_github(request: GitHubRequest):
         # Clone repository
         GitHubProcessor.clone_repository(request.url, clone_dir)
 
+        # Extract repository name from URL
+        # e.g. https://github.com/username/repo-name -> repo-name
+        project_name = request.url.rstrip('/').split('/')[-1]
+        if project_name.endswith('.git'):
+            project_name = project_name[:-4]
+
         # Scan files
         scanner = FileScanner(clone_dir)
-        scan_results = scanner.scan()
+        scan_results = scanner.scan(project_name=project_name)
 
         return {
             "success": True,
