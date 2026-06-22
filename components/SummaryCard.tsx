@@ -35,6 +35,7 @@ interface SummaryCardProps {
   duration?: number | null;
   onReset: () => void;
   onRetry?: () => void;
+  isDemo?: boolean;
 }
 
 const ScoreBadge = ({ score }: { score: number }) => {
@@ -126,7 +127,7 @@ const CollapsibleSection = ({
   );
 };
 
-export default function SummaryCard({ summary, duration, onReset, onRetry }: SummaryCardProps) {
+export default function SummaryCard({ summary, duration, onReset, onRetry, isDemo }: SummaryCardProps) {
   const aiReport = summary.ai_report;
   const aiError = summary.ai_error;
   const timestamp = new Date().toLocaleString();
@@ -169,10 +170,13 @@ export default function SummaryCard({ summary, duration, onReset, onRetry }: Sum
             <BarChart3 className="w-7 h-7" />
           </div>
           <div>
-            <h1 className="text-3xl font-black text-primary-text tracking-tight">
+            <h1 className="text-3xl font-black text-primary-text tracking-tight flex items-center">
+               {isDemo && <span className="mr-3 px-2 py-0.5 rounded-lg bg-accent/20 text-accent text-[10px] font-black uppercase tracking-widest border border-accent/20 flex items-center">✨ Demo</span>}
                {aiReport ? 'Analysis Complete' : 'Preprocessing Complete'}
             </h1>
-            <p className="text-[10px] text-secondary-text font-black uppercase tracking-[0.2em] opacity-60">Session Report • {timestamp}</p>
+            <p className="text-[10px] text-secondary-text font-black uppercase tracking-[0.2em] opacity-60">
+              {isDemo ? 'Sample Analysis Data' : 'Session Report'} • {timestamp}
+            </p>
           </div>
         </div>
         <div className="flex flex-wrap justify-center gap-3">
@@ -249,7 +253,9 @@ export default function SummaryCard({ summary, duration, onReset, onRetry }: Sum
               </div>
            </div>
 
-           <button onClick={onReset} aria-label="Start a new analysis" className="mt-10 w-full py-4 rounded-2xl bg-background border border-border text-[10px] font-black uppercase tracking-[0.3em] text-secondary-text hover:text-accent hover:border-accent transition-all active:scale-95 shadow-lg cursor-pointer">Analyze Another</button>
+           <button onClick={onReset} aria-label={isDemo ? "Analyze your repository" : "Start a new analysis"} className="mt-10 w-full py-4 rounded-2xl bg-background border border-border text-[10px] font-black uppercase tracking-[0.3em] text-secondary-text hover:text-accent hover:border-accent transition-all active:scale-95 shadow-lg cursor-pointer">
+             {isDemo ? 'Analyze Your Repository' : 'Analyze Another'}
+           </button>
         </motion.div>
       </div>
 

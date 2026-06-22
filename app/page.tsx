@@ -1,8 +1,9 @@
 'use client';
 
 import { Code2, ShieldAlert, FileText, Lightbulb } from 'lucide-react';
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { AnalysisSummary } from '@/types/analysis';
+import { DEMO_REPORT } from '@/lib/demo-data';
 import { AnimatePresence, motion } from 'framer-motion';
 import Navbar from '@/components/Navbar';
 import Hero from '@/components/Hero';
@@ -16,6 +17,7 @@ import Footer from '@/components/Footer';
 export default function Home() {
   const [analysisResult, setAnalysisResult] = useState<AnalysisSummary | null>(null);
   const [analysisDuration, setAnalysisDuration] = useState<number | null>(null);
+  const [isDemoMode, setIsDemoMode] = useState(false);
   const [retryTrigger, setRetryTrigger] = useState(0);
   const startTimeRef = useRef<number | null>(null);
 
@@ -33,8 +35,19 @@ export default function Home() {
   const handleReset = () => {
     setAnalysisResult(null);
     setAnalysisDuration(null);
+    setIsDemoMode(false);
     startTimeRef.current = null;
     setRetryTrigger(0);
+  };
+
+  const handleViewDemo = () => {
+    setIsDemoMode(true);
+    setAnalysisResult(DEMO_REPORT);
+    setAnalysisDuration(null);
+    const analyzeSection = document.getElementById('analyze');
+    if (analyzeSection) {
+      analyzeSection.scrollIntoView({ behavior: 'smooth' });
+    }
   };
 
   const handleRetry = () => {
@@ -72,10 +85,10 @@ export default function Home() {
 
   return (
     <div className="min-h-screen flex flex-col">
-      <Navbar />
+      <Navbar onViewDemo={handleViewDemo} />
 
       <main className="flex-grow">
-        <Hero />
+        <Hero onViewDemo={handleViewDemo} />
 
         <section id="analyze" className="pb-24 sm:pb-32">
           <div className="max-w-5xl mx-auto px-4">
@@ -96,7 +109,7 @@ export default function Home() {
                 </motion.div>
               ) : (
                 <motion.div
-                  key="summary"
+                  key={isDemoMode ? 'demo-summary' : 'summary'}
                   initial={{ opacity: 0, scale: 1.05 }}
                   animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0, scale: 0.95 }}
@@ -107,6 +120,7 @@ export default function Home() {
                     duration={analysisDuration}
                     onReset={handleReset}
                     onRetry={handleRetry}
+                    isDemo={isDemoMode}
                   />
                 </motion.div>
               )}

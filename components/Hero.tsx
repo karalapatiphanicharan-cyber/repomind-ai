@@ -3,7 +3,7 @@
 import { motion } from 'framer-motion';
 import { Check } from 'lucide-react';
 
-export default function Hero() {
+export default function Hero({ onViewDemo }: { onViewDemo?: () => void }) {
   const trustIndicators = [
     "ZIP Upload",
     "Public GitHub Repositories",
@@ -58,6 +58,14 @@ export default function Hero() {
           >
             Analyze GitHub Repository
           </button>
+          {onViewDemo && (
+            <button
+              onClick={onViewDemo}
+              className="w-full sm:w-auto h-14 px-10 rounded-xl bg-surface border border-dashed border-accent/40 text-accent font-bold hover:bg-accent/5 hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-4 focus-visible:ring-offset-background cursor-pointer flex items-center justify-center"
+            >
+              ✨ View Demo Report
+            </button>
+          )}
         </motion.div>
 
         <motion.div
