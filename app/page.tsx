@@ -1,6 +1,6 @@
 'use client';
 
-import { Code2, ShieldAlert, FileText, Lightbulb } from 'lucide-react';
+import { Code2, ShieldAlert, FileText, Lightbulb, Github, FileArchive } from 'lucide-react';
 import { useState, useRef } from 'react';
 import { AnalysisSummary } from '@/types/analysis';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -12,6 +12,8 @@ import HowItWorks from '@/components/HowItWorks';
 import Agents from '@/components/Agents';
 import FeatureCard from '@/components/FeatureCard';
 import Footer from '@/components/Footer';
+import BackgroundEffects from '@/components/BackgroundEffects';
+import CursorGlow from '@/components/CursorGlow';
 
 export default function Home() {
   const [analysisResult, setAnalysisResult] = useState<AnalysisSummary | null>(null);
@@ -38,46 +40,60 @@ export default function Home() {
   };
 
   const handleRetry = () => {
-    // We clear the result but keep the trigger to tell UploadCard to try again with its existing state
     setAnalysisResult(null);
     setRetryTrigger(prev => prev + 1);
   };
 
   const features = [
     {
-      title: "Code Analysis",
-      description: "Deep structural understanding of your project.",
-      items: ["Understand project architecture", "Detect frameworks and languages"],
+      title: "Multi-Agent Analysis",
+      description: "Collaborative AI agents work together to understand your code.",
+      items: ["Specialized expertise for every domain", "Cross-agent consensus for high accuracy"],
       icon: Code2
     },
     {
       title: "Security Review",
-      description: "Keep your codebase safe and secure.",
-      items: ["Find secrets", "Identify risky patterns"],
+      description: "Identify vulnerabilities before they become problems.",
+      items: ["Secret detection", "Risk assessment of dependencies"],
       icon: ShieldAlert
     },
     {
-      title: "Documentation Review",
-      description: "Improve maintainability with better docs.",
-      items: ["Evaluate README quality", "Suggest improvements"],
+      title: "Documentation Intel",
+      description: "Deep insights into your project's documentation quality.",
+      items: ["README effectiveness", "Architecture clarity analysis"],
       icon: FileText
     },
     {
       title: "Action Plan",
-      description: "Concrete steps to improve your code.",
-      items: ["Prioritized engineering recommendations"],
+      description: "Concrete engineering steps to improve your codebase.",
+      items: ["Prioritized recommendations", "Estimated impact of changes"],
       icon: Lightbulb
+    },
+    {
+      title: "GitHub Support",
+      description: "Seamlessly analyze any public repository.",
+      items: ["Instant cloning and scanning", "Historical context awareness"],
+      icon: Github
+    },
+    {
+      title: "ZIP Upload",
+      description: "Local-first analysis for your private work.",
+      items: ["Secure temporary processing", "Supports standard project structures"],
+      icon: FileArchive
     }
   ];
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col relative">
+      <BackgroundEffects />
+      <CursorGlow />
+
       <Navbar />
 
       <main className="flex-grow">
         <Hero />
 
-        <section id="analyze" className="pb-24 sm:pb-32">
+        <section id="analyze" className="pb-24 sm:pb-32 relative z-10">
           <div className="max-w-5xl mx-auto px-4">
             <AnimatePresence mode="wait">
               {!analysisResult ? (
@@ -118,16 +134,31 @@ export default function Home() {
 
         <Agents />
 
-        <section className="py-24 sm:py-32 bg-background border-t border-border/40">
+        <section className="py-24 sm:py-32 relative z-10 overflow-hidden">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-20">
-              <h2 className="text-3xl sm:text-4xl font-bold text-primary-text mb-4">Powerful Analysis Features</h2>
-              <p className="text-secondary-text max-w-2xl mx-auto">Advanced AI agents specialized in different aspects of your codebase.</p>
+              <motion.h2
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                className="text-3xl sm:text-4xl font-extrabold text-primary-text mb-4"
+              >
+                Powerful Analysis Features
+              </motion.h2>
+              <motion.p
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: 0.1 }}
+                className="text-secondary-text max-w-2xl mx-auto"
+              >
+                Advanced AI agents specialized in different aspects of your codebase, providing deep engineering insights.
+              </motion.p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
               {features.map((feature, index) => (
-                <FeatureCard key={index} {...feature} />
+                <FeatureCard key={index} {...feature} index={index} />
               ))}
             </div>
           </div>
