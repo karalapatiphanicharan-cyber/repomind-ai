@@ -14,6 +14,7 @@ import FeatureCard from '@/components/FeatureCard';
 import Footer from '@/components/Footer';
 import BackgroundEffects from '@/components/BackgroundEffects';
 import CursorGlow from '@/components/CursorGlow';
+import SectionScrollHint from '@/components/SectionScrollHint';
 
 export default function Home() {
   const [analysisResult, setAnalysisResult] = useState<AnalysisSummary | null>(null);
@@ -129,6 +130,8 @@ export default function Home() {
             </AnimatePresence>
           </div>
         </section>
+
+        {!analysisResult && <SectionScrollHint />}
 
         <HowItWorks />
 

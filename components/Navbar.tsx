@@ -26,7 +26,7 @@ export default function Navbar() {
             </Link>
           </div>
           <div className="flex items-center space-x-6">
-            <Link href="https://github.com" target="_blank" className="flex items-center space-x-2 px-5 py-2.5 rounded-xl bg-surface/50 border border-border/60 text-secondary-text hover:text-primary-text hover:border-accent/40 hover:bg-surface/80 transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent group">
+            <Link href="https://github.com/karalapatiphanicharan-cyber/repomind-ai" target="_blank" rel="noopener noreferrer" className="flex items-center space-x-2 px-5 py-2.5 rounded-xl bg-surface/50 border border-border/60 text-secondary-text hover:text-primary-text hover:border-accent/40 hover:bg-surface/80 transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent group">
               <Github size={18} className="group-hover:rotate-12 transition-transform" />
               <span className="text-sm font-bold tracking-tight">Star on GitHub</span>
             </Link>
