@@ -1,7 +1,7 @@
 'use client';
 
 import { Code2, ShieldAlert, FileText, Lightbulb } from 'lucide-react';
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef } from 'react';
 import { AnalysisSummary } from '@/types/analysis';
 import { DEMO_REPORT } from '@/lib/demo-data';
 import { AnimatePresence, motion } from 'framer-motion';
